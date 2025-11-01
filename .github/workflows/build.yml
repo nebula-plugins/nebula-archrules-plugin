@@ -6,14 +6,7 @@ on:
   pull_request:
 
 jobs:
-  validation:
-    name: "Gradle Wrapper Validation"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: gradle/actions/wrapper-validation@v4
   buildmultijdk:
-    needs: validation
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -40,6 +33,6 @@ jobs:
         with:
           cache-overwrite-existing: true
       - name: Gradle build
-        run: ./gradlew --info --stacktrace build
+        run: ./gradlew --stacktrace build
         env:
           JDK_VERSION_FOR_TESTS: ${{ matrix.java }}

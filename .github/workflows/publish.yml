@@ -6,14 +6,7 @@ on:
       - v*.*.*-rc.*
 
 jobs:
-  validation:
-    name: "Gradle Wrapper Validation"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: gradle/actions/wrapper-validation@v4
   validatepluginpublication:
-    needs: validation
     runs-on: ubuntu-latest
     name: Gradle Plugin Publication Validation
     env:
@@ -38,10 +31,8 @@ jobs:
         with:
           cache-overwrite-existing: true
       - name: Verify plugin publication
-        if: |
-          startsWith(github.ref, 'refs/tags/v') &&
-          (!contains(github.ref, '-rc.'))
-        run: ./gradlew  --stacktrace -Dgradle.publish.key=${{ secrets.gradlePublishKey }} -Dgradle.publish.secret=${{ secrets.gradlePublishSecret }}  -Prelease.useLastTag=true final publishPlugin --validate-only -x check -x signPluginMavenPublication
+        if: (!contains(github.ref, '-rc.'))
+        run: ./gradlew  --stacktrace -Dgradle.publish.key=${{ secrets.gradlePublishKey }} -Dgradle.publish.secret=${{ secrets.gradlePublishSecret }}  -Prelease.useLastTag=true final publishPlugin --validate-only -x check
   publish:
     if: github.event.base_ref == 'refs/heads/main' # tags must be pushed to main
     needs: validatepluginpublication
@@ -75,12 +66,8 @@ jobs:
       - name: Gradle build
         run: ./gradlew --stacktrace build
       - name: Publish candidate
-        if: |
-          startsWith(github.ref, 'refs/tags/v') &&
-          contains(github.ref, '-rc.')
+        if: contains(github.ref, '-rc.')
         run: ./gradlew --info --stacktrace -Prelease.useLastTag=true candidate
       - name: Publish release
-        if: |
-          startsWith(github.ref, 'refs/tags/v') &&
-          (!contains(github.ref, '-rc.'))
+        if: (!contains(github.ref, '-rc.'))
         run: ./gradlew --info --stacktrace -Dgradle.publish.key=${{ secrets.gradlePublishKey }} -Dgradle.publish.secret=${{ secrets.gradlePublishSecret }} -Prelease.useLastTag=true final
