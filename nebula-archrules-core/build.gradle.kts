@@ -7,6 +7,7 @@ repositories {
 }
 dependencies {
     api("com.tngtech.archunit:archunit:1.4.1")
+    testImplementation("org.assertj:assertj-core:3.27.6")
 }
 testing {
     suites {
@@ -19,4 +20,7 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(11)
     }
+}
+dependencyLocking {
+    lockAllConfigurations()
 }
