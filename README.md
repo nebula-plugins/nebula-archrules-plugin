@@ -5,7 +5,19 @@ JUnit suite. However, it is limited by its design to be used as part of a JUnit 
 ArchRules is a toolkit which gives organizations the ability to share and apply rules across any number of repositories.
 Rules can be sourced from OSS libraries or private internal libraries.
 
-### Authoring Rules
+## Current Versions
+
+### Core Library
+[![Maven Central](https://img.shields.io/maven-central/v/com.netflix.nebula/nebula-archrules-core?style=for-the-badge&color=01AF01)](https://repo1.maven.org/maven2/com/netflix/nebula/nebula-archrules-core/)
+
+### Library Plugin
+[![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/com.netflix.nebula.archrules.library?style=for-the-badge&color=01AF01)](https://plugins.gradle.org/plugin/com.netflix.nebula.archrules.library)
+
+### Runner Plugin
+[![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/com.netflix.nebula.archrules.runner?style=for-the-badge&color=01AF01)](https://plugins.gradle.org/plugin/com.netflix.nebula.archrules.runner)
+
+
+## Authoring Rules
 
 To author rules, apply the ArchRules Library plugin to a project:
 

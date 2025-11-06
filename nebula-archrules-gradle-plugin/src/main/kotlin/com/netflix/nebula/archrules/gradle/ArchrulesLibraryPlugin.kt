@@ -3,7 +3,9 @@ package com.netflix.nebula.archrules.gradle
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.register
 
 class ArchrulesLibraryPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -14,6 +16,10 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
             project.dependencies.add(archRulesSourceSet.implementationConfigurationName,
                 "com.netflix.nebula:nebula-archrules-core:$version"
             )
+            val jarTask = project.tasks.register<Jar>("archRulesJar") {
+                archiveClassifier.set("archrules")
+                from(archRulesSourceSet.output)
+            }
         }
     }
 }
