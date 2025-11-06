@@ -6,6 +6,10 @@ description = "Plugins for authoring and running Nebula ArchRules"
 repositories {
     mavenCentral()
 }
+dependencies {
+    testImplementation("net.javacrumbs.json-unit:json-unit-assertj:5.0.0")
+    testImplementation("org.json:json:20250517")
+}
 gradlePlugin {
     plugins {
         create("library") {
