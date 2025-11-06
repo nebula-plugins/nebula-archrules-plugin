@@ -49,6 +49,7 @@ internal class IntegrationTest {
 
         val result = runner.run("check") {
             withGradleVersion(gradleVersion.version)
+            forwardOutput()
         }
 
         assertThat(result.task(":library-with-rules:check"))

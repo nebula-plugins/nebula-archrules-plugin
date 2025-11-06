@@ -64,7 +64,11 @@ public class LibraryArchRules implements ArchRulesService {
 
 When authoring rules about the usage of your own library code, it is recommended to colocate your rules library in the
 same project as the library code. The ArchRules plugin will publish the rules in a separate Jar, and the Runner plugin
-will select that jar for running rules, but these rule classes will not end up up in the runtime classpath.
+will select that jar for running rules, but these rule classes will not end up in the runtime classpath.
+
+#### How it works
+
+The Archrules Library plugin produces a separate Jar for the `archRules` sourceset, which is exposed as an alternate variant of the library. 
 
 ## LICENSE
 
