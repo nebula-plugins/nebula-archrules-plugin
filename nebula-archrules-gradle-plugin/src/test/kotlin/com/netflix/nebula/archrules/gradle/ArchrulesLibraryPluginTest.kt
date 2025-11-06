@@ -83,13 +83,19 @@ class ArchrulesLibraryPluginTest {
         assertThat(moduleMetadata)
             .`as`("Gradle Module Metadata is created")
             .exists()
+
         val moduleMetadataJson = moduleMetadata.readText()
-        println(moduleMetadataJson)
+
         assertThatJson(moduleMetadataJson)
             .inPath("$.variants[?(@.name=='runtimeElements')].files[0]")
             .isArray
             .first().isObject
             .containsEntry("name", "library-with-rules-0.0.1.jar")
 
+        assertThatJson(moduleMetadataJson)
+            .inPath("$.variants[?(@.name=='runtimeElementsArchRulesElements')].files[0]")
+            .isArray
+            .first().isObject
+            .containsEntry("name", "library-with-rules-0.0.1-archrules.jar")
     }
 }
