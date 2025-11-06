@@ -3,16 +3,18 @@ package com.netflix.nebula.archrules.gradle
 import nebula.test.dsl.*
 import nebula.test.dsl.TestKitAssertions.assertThat
 import org.gradle.testkit.runner.TaskOutcome
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import java.io.File
 
 internal class IntegrationTest {
     @TempDir
     lateinit var projectDir: File
 
-    @Test
-    fun test() {
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun test(gradleVersion: SupportedGradleVersion) {
         val runner = testProject(projectDir) {
             subProject("library-with-rules") {
                 // a library that contains production code and rules to go along with it
@@ -86,11 +88,15 @@ public class LibraryArchRules implements ArchRulesService {
             }
         }
 
-        val result = runner.run("check", "compileArchRulesJava")
+        val result = runner.run("check", "archRulesJar") {
+            withGradleVersion(gradleVersion.version)
+        }
 
         assertThat(result.task(":library-with-rules:compileArchRulesJava"))
             .`as`("compile task runs for the archRules source set")
-            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE)
+            .hasOutcome(TaskOutcome.SUCCESS)
+        assertThat(result.task(":library-with-rules:archRulesJar"))
+            .hasOutcome(TaskOutcome.SUCCESS)
         assertThat(result.task(":library-with-rules:check"))
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE)
         assertThat(result.task(":code-to-check:check"))
@@ -101,6 +107,9 @@ public class LibraryArchRules implements ArchRulesService {
 
         assertThat(projectDir.resolve("library-with-rules/build/libs/library-with-rules.jar"))
             .`as`("Library Jar is created")
+            .exists()
+        assertThat(projectDir.resolve("library-with-rules/build/libs/library-with-rules-archrules.jar"))
+            .`as`("ArchRules Jar is created")
             .exists()
     }
 }
