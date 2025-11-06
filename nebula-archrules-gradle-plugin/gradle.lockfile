@@ -2,10 +2,18 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 cglib:cglib-nodep:3.2.2=integTestRuntimeClasspath,testRuntimeClasspath
+com.jayway.jsonpath:json-path:2.9.0=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.netflix.nebula:nebula-test:11.7.1=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
-net.bytebuddy:byte-buddy:1.15.11=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
+net.bytebuddy:byte-buddy:1.17.7=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
+net.javacrumbs.json-unit:json-unit-assertj:5.0.0=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
+net.javacrumbs.json-unit:json-unit-core:5.0.0=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
+net.javacrumbs.json-unit:json-unit-json-path:5.0.0=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
+net.minidev:accessors-smart:2.5.0=integTestRuntimeClasspath,testRuntimeClasspath
+net.minidev:json-smart:2.5.0=integTestRuntimeClasspath,testRuntimeClasspath
 org.apiguardian:apiguardian-api:1.1.2=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.assertj:assertj-core:3.27.3=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.assertj:assertj-core:3.27.6=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hamcrest:hamcrest-core:3.0=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hamcrest:hamcrest:3.0=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.jetbrains.kotlin:kotlin-assignment-compiler-plugin-embeddable:2.2.0=kotlinCompilerPluginClasspathIntegTest,kotlinCompilerPluginClasspathMain,kotlinCompilerPluginClasspathTest
 org.jetbrains.kotlin:kotlin-build-tools-api:2.2.0=kotlinBuildToolsApiClasspath
 org.jetbrains.kotlin:kotlin-build-tools-impl:2.2.0=kotlinBuildToolsApiClasspath
@@ -24,6 +32,7 @@ org.jetbrains.kotlin:kotlin-scripting-jvm:2.2.0=kotlinBuildToolsApiClasspath,kot
 org.jetbrains.kotlin:kotlin-stdlib:2.2.0=compileClasspath,integTestCompileClasspath,integTestRuntimeClasspath,kotlinBuildToolsApiClasspath,kotlinCompilerClasspath,kotlinCompilerPluginClasspathIntegTest,kotlinCompilerPluginClasspathMain,kotlinCompilerPluginClasspathTest,testCompileClasspath,testRuntimeClasspath
 org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0=kotlinBuildToolsApiClasspath,kotlinCompilerClasspath
 org.jetbrains:annotations:13.0=compileClasspath,integTestCompileClasspath,integTestRuntimeClasspath,kotlinBuildToolsApiClasspath,kotlinCompilerClasspath,kotlinCompilerPluginClasspathIntegTest,kotlinCompilerPluginClasspathMain,kotlinCompilerPluginClasspathTest,testCompileClasspath,testRuntimeClasspath
+org.json:json:20250517=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.jspecify:jspecify:1.0.0=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:5.12.2=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-engine:5.12.2=integTestRuntimeClasspath,testRuntimeClasspath
@@ -34,4 +43,6 @@ org.junit.platform:junit-platform-engine:1.14.0=integTestCompileClasspath,integT
 org.junit.platform:junit-platform-launcher:1.14.0=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.objenesis:objenesis:2.4=integTestRuntimeClasspath,testRuntimeClasspath
 org.opentest4j:opentest4j:1.3.0=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.ow2.asm:asm:9.3=integTestRuntimeClasspath,testRuntimeClasspath
+org.slf4j:slf4j-api:2.0.11=integTestRuntimeClasspath,testRuntimeClasspath
 empty=annotationProcessor,integTestAnnotationProcessor,integTestKotlinScriptDefExtensions,kotlinScriptDefExtensions,runtimeClasspath,testAnnotationProcessor,testKotlinScriptDefExtensions
