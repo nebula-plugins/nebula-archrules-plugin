@@ -72,6 +72,24 @@ public class LibraryArchRules implements ArchRulesService {
     )
 }
 
+fun SourceSetBuilder.exampleDeprecatedUsage(className: String = "FailingCode") {
+    java(
+        "com/example/consumer/$className.java",
+        //language=java
+        """
+package com.example.consumer;
+
+import com.example.library.LibraryClass;
+
+class $className {
+    public void aMethod() {
+        LibraryClass.deprecatedApi();
+    }
+}
+"""
+    )
+}
+
 fun SourceSetBuilder.exampleTestForArchRule() {
     java(
         "com/example/library/LibraryArchRulesTest.java",

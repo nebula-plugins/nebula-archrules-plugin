@@ -4,6 +4,7 @@
 cglib:cglib-nodep:3.2.2=integTestRuntimeClasspath,testRuntimeClasspath
 com.jayway.jsonpath:json-path:2.9.0=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.netflix.nebula:nebula-test:11.7.1=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.tngtech.archunit:archunit:1.4.1=compileClasspath,integTestCompileClasspath,integTestRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 net.bytebuddy:byte-buddy:1.17.7=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
 net.javacrumbs.json-unit:json-unit-assertj:5.0.0=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
 net.javacrumbs.json-unit:json-unit-core:5.0.0=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -44,5 +45,5 @@ org.junit.platform:junit-platform-launcher:1.14.0=integTestCompileClasspath,inte
 org.objenesis:objenesis:2.4=integTestRuntimeClasspath,testRuntimeClasspath
 org.opentest4j:opentest4j:1.3.0=integTestCompileClasspath,integTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.ow2.asm:asm:9.3=integTestRuntimeClasspath,testRuntimeClasspath
-org.slf4j:slf4j-api:2.0.11=integTestRuntimeClasspath,testRuntimeClasspath
-empty=annotationProcessor,integTestAnnotationProcessor,integTestKotlinScriptDefExtensions,kotlinScriptDefExtensions,runtimeClasspath,testAnnotationProcessor,testKotlinScriptDefExtensions
+org.slf4j:slf4j-api:2.0.17=compileClasspath,integTestCompileClasspath,integTestRuntimeClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+empty=annotationProcessor,integTestAnnotationProcessor,integTestKotlinScriptDefExtensions,kotlinScriptDefExtensions,testAnnotationProcessor,testKotlinScriptDefExtensions

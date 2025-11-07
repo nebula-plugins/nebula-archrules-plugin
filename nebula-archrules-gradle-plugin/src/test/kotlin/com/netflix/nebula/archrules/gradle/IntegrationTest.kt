@@ -44,8 +44,18 @@ internal class IntegrationTest {
                 dependencies(
                     """implementation(project(":library-with-rules"))"""
                 )
+                src {
+                    main {
+                        exampleDeprecatedUsage()
+                    }
+                }
             }
         }
+
+        val serviceFile = projectDir
+                .resolve("library-with-rules/src/archRules/resources/META-INF/services/com.netflix.nebula.archrules.core.ArchRulesService")
+        serviceFile.parentFile.mkdirs()
+        serviceFile.writeText("com.example.library.LibraryArchRules")
 
         val result = runner.run("check") {
             withGradleVersion(gradleVersion.version)
@@ -54,10 +64,24 @@ internal class IntegrationTest {
 
         assertThat(result.task(":library-with-rules:check"))
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE)
+
+        assertThat(result.task(":code-to-check:checkArchRulesMain"))
+            .`as`("archRules run for main source set")
+            .hasOutcome(TaskOutcome.SUCCESS)
+
+        assertThat(result.task(":code-to-check:checkArchRulesTest"))
+            .`as`("archRules run for test source set")
+            .hasOutcome(TaskOutcome.SUCCESS)
+
         assertThat(result.task(":code-to-check:check"))
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE)
         assertThat(result)
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
+
+        val reportsDir = projectDir.resolve("code-to-check/build/reports/archrules")
+
+        assertThat(reportsDir.exists())
+        assertThat(reportsDir.resolve("main.data")).exists().isNotEmpty
     }
 }

@@ -1,6 +1,7 @@
 package com.netflix.nebula.archrules.core;
 
 import com.tngtech.archunit.lang.ArchRule;
+import com.tngtech.archunit.lang.EvaluationResult;
 import com.tngtech.archunit.lang.Priority;
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
 import org.junit.jupiter.api.Test;
@@ -11,19 +12,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class RunnerTest {
     @Test
     public void test_pass() {
-        final var result = Runner.check(noDeprecatedRule, PassingClass.class);
+        final EvaluationResult result = Runner.check(noDeprecatedRule, PassingClass.class);
         assertThat(result.hasViolation()).isFalse();
     }
 
     @Test
     public void test_fail() {
-        final var result = Runner.check(noDeprecatedRule, FailingClass.class);
+        final EvaluationResult result = Runner.check(noDeprecatedRule, FailingClass.class);
         assertThat(result.hasViolation()).isTrue();
     }
 
     @Test
     public void test_fail_and_pass() {
-        final var result = Runner.check(noDeprecatedRule, PassingClass.class, FailingClass.class);
+        final EvaluationResult result = Runner.check(noDeprecatedRule, PassingClass.class, FailingClass.class);
         assertThat(result.hasViolation()).isTrue();
         assertThat(result.getFailureReport().getDetails()).hasSize(1);
     }
@@ -51,13 +52,13 @@ public class RunnerTest {
 
     @Test
     public void test_smoke_pass() {
-        final var result = Runner.check(smokeTestRule, SmokeTest.class);
+        final EvaluationResult result = Runner.check(smokeTestRule, SmokeTest.class);
         assertThat(result.hasViolation()).isFalse();
     }
 
     @Test
     public void test_smoke_fail() {
-        final var result = Runner.check(smokeTestRule, SmokeTestFail.class);
+        final EvaluationResult result = Runner.check(smokeTestRule, SmokeTestFail.class);
         assertThat(result.hasViolation()).isTrue();
         assertThat(result.getFailureReport().getDetails())
                 .contains(NoClassesMatchedEvent.NO_MATCH_MESSAGE);

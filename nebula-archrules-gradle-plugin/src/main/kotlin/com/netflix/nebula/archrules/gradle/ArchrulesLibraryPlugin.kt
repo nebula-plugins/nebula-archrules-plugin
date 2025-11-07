@@ -1,39 +1,41 @@
 package com.netflix.nebula.archrules.gradle
 
+import com.netflix.nebula.archrules.gradle.ArchRuleAttribute.ARCH_RULES
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.attributes.Usage
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.plugins.jvm.JvmTestSuite
-import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.invoke
 import org.gradle.kotlin.dsl.named
-import org.gradle.kotlin.dsl.register
 import org.gradle.testing.base.TestingExtension
 
 class ArchrulesLibraryPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val version = ArchrulesLibraryPlugin::class.java.`package`.implementationVersion ?: "latest.release"
-        project.plugins.withId("java") {
+        project.pluginManager.withPlugin("java") {
             val ext = project.extensions.getByType<JavaPluginExtension>()
             val archRulesSourceSet = ext.sourceSets.create("archRules")
             project.dependencies.add(
                 archRulesSourceSet.implementationConfigurationName,
                 "com.netflix.nebula:nebula-archrules-core:$version"
             )
-            val jarTask = project.tasks.register<Jar>("archRulesJar") {
-                archiveClassifier.set("archrules")
-                from(archRulesSourceSet.output)
+            ext.registerFeature("archRules") {
+                usingSourceSet(archRulesSourceSet)
+                capability(project.group.toString(), project.name, project.version.toString())
             }
-            val runtimeElements = project.configurations.getByName("runtimeElements")
-            runtimeElements.outgoing.variants.create("archRulesElements") {
+            project.configurations.named("archRulesRuntimeElements") {
                 attributes {
-                    attribute(Usage.USAGE_ATTRIBUTE, project.objects.named("arch-rules"))
+                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
                 }
-                artifact(jarTask)
             }
-            project.plugins.withId("jvm-test-suite") {
+            project.configurations.named("archRulesApiElements") {
+                attributes {
+                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                }
+            }
+
+            project.pluginManager.withPlugin("jvm-test-suite") {
                 val ext = project.extensions.getByType<TestingExtension>()
                 ext.suites {
                     register("archRulesTest", JvmTestSuite::class.java) {

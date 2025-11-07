@@ -75,7 +75,7 @@ class ArchrulesLibraryPluginTest {
         assertThat(projectDir.resolve("build/libs/library-with-rules-0.0.1.jar"))
             .`as`("Library Jar is created")
             .exists()
-        assertThat(projectDir.resolve("build/libs/library-with-rules-0.0.1-archrules.jar"))
+        assertThat(projectDir.resolve("build/libs/library-with-rules-0.0.1-arch-rules.jar"))
             .`as`("ArchRules Jar is created")
             .exists()
 
@@ -85,7 +85,7 @@ class ArchrulesLibraryPluginTest {
             .exists()
 
         val moduleMetadataJson = moduleMetadata.readText()
-
+println(moduleMetadataJson)
         assertThatJson(moduleMetadataJson)
             .inPath("$.variants[?(@.name=='runtimeElements')].files[0]")
             .isArray
@@ -93,10 +93,10 @@ class ArchrulesLibraryPluginTest {
             .containsEntry("name", "library-with-rules-0.0.1.jar")
 
         assertThatJson(moduleMetadataJson)
-            .inPath("$.variants[?(@.name=='runtimeElementsArchRulesElements')].files[0]")
+            .inPath("$.variants[?(@.name=='archRulesRuntimeElements')].files[0]")
             .isArray
             .first().isObject
-            .containsEntry("name", "library-with-rules-0.0.1-archrules.jar")
+            .containsEntry("name", "library-with-rules-0.0.1-arch-rules.jar")
     }
 
     @Test
