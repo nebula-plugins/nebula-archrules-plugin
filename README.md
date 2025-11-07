@@ -30,8 +30,7 @@ plugins {
 This plugin will create a source set called `archRules`. Create classes in that source set which implement the
 `com.netflix.nebula.archrules.core.ArchRulesService` interface.
 
-#### Example
-
+#### Example (src/archRules/java/LibraryArchRulesTest.java)
 ```java
 package com.example.library;
 
@@ -47,7 +46,7 @@ import static com.tngtech.archunit.core.domain.JavaAccess.Predicates.targetOwner
 import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.annotatedWith;
 
 public class LibraryArchRules implements ArchRulesService {
-    private final ArchRule noDeprecated = ArchRuleDefinition.priority(Priority.LOW).noClasses()
+    static final ArchRule noDeprecated = ArchRuleDefinition.priority(Priority.LOW).noClasses()
             .should().accessTargetWhere(targetOwner(annotatedWith(Deprecated.class)))
             .orShould().accessTargetWhere(target(annotatedWith(Deprecated.class)))
             .orShould().dependOnClassesThat().areAnnotatedWith(Deprecated.class)
@@ -66,7 +65,48 @@ When authoring rules about the usage of your own library code, it is recommended
 same project as the library code. The ArchRules plugin will publish the rules in a separate Jar, and the Runner plugin
 will select that jar for running rules, but these rule classes will not end up in the runtime classpath.
 
-#### How it works
+### Testing Rules
+
+The ArchRules Library plugin creates a test suite called `archRulesTest`. You can write unit tests for your rules in the `archRulesTest` source set.
+
+#### Example (src/archRulesTest/java/LibraryArchRulesTest.java)
+```java
+package com.example.library;
+
+import com.netflix.nebula.archrules.core.ArchRulesService;
+import com.netflix.nebula.archrules.core.Runner;
+import com.tngtech.archunit.lang.EvaluationResult;
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
+
+public class LibraryArchRulesTest {
+    static class PassingCode {
+        public void aMethod() {
+            LibraryClass.newApi();
+        }
+    }     
+    static class FailingCode {
+        public void aMethod() {
+            LibraryClass.deprecatedApi();
+        }
+    }
+    
+    @Test
+    public void test_pass() {
+        EvaluationResult result = Runner.check(LibraryArchRules.noDeprecated, PassingCode.class);
+        Assertions.assertFalse(result.hasViolation());
+    }
+        
+    @Test
+    public void test_fail() {
+        EvaluationResult result = Runner.check(LibraryArchRules.noDeprecated, FailingCode.class);
+        Assertions.assertTrue(result.hasViolation());
+    }
+}
+```
+
+## How it works
 
 The Archrules Library plugin produces a separate Jar for the `archRules` sourceset, which is exposed as an alternate variant of the library. 
 

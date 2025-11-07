@@ -26,7 +26,12 @@ fun SourceSetBuilder.exampleLibraryClass() {
 package com.example.library;
                             
 public class LibraryClass {
+    public static void newApi() {
+    }
     
+    @Deprecated
+    public static void deprecatedApi() {
+    }
 }
 """
     )
@@ -49,7 +54,7 @@ import static com.tngtech.archunit.core.domain.JavaAccess.Predicates.targetOwner
 import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.annotatedWith;
 
 public class LibraryArchRules implements ArchRulesService {
-    private final ArchRule noDeprecated =  ArchRuleDefinition.priority(Priority.LOW)
+    public static final ArchRule noDeprecated = ArchRuleDefinition.priority(Priority.LOW)
             .noClasses()
             .should().accessTargetWhere(targetOwner(annotatedWith(Deprecated.class)))
             .orShould().accessTargetWhere(target(annotatedWith(Deprecated.class)))
@@ -61,6 +66,48 @@ public class LibraryArchRules implements ArchRulesService {
     @Override
     public Map<String, ArchRule> getRules() {
         return Map.of("deprecated", noDeprecated);
+    }
+}
+"""
+    )
+}
+
+fun SourceSetBuilder.exampleTestForArchRule() {
+    java(
+        "com/example/library/LibraryArchRulesTest.java",
+        //language=java
+        """
+package com.example.library;
+
+import com.netflix.nebula.archrules.core.ArchRulesService;
+import com.netflix.nebula.archrules.core.Runner;
+import com.tngtech.archunit.lang.EvaluationResult;
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
+
+public class LibraryArchRulesTest {
+    static class PassingCode {
+        public void aMethod() {
+            LibraryClass.newApi();
+        }
+    }     
+    static class FailingCode {
+        public void aMethod() {
+            LibraryClass.deprecatedApi();
+        }
+    }
+    
+    @Test
+    public void test_pass() {
+        EvaluationResult result = Runner.check(LibraryArchRules.noDeprecated, PassingCode.class);
+        Assertions.assertFalse(result.hasViolation());
+    }
+        
+    @Test
+    public void test_fail() {
+        EvaluationResult result = Runner.check(LibraryArchRules.noDeprecated, FailingCode.class);
+        Assertions.assertTrue(result.hasViolation());
     }
 }
 """
