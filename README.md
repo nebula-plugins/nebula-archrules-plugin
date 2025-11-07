@@ -61,6 +61,8 @@ public class LibraryArchRules implements ArchRulesService {
 }
 ```
 
+You will also need to create a file at `src/archRules/resources/META-INF/services/com.netflix.nebula.archrules.core.ArchRulesService` and add the fully qualified name of your rules class to that file.
+
 When authoring rules about the usage of your own library code, it is recommended to colocate your rules library in the
 same project as the library code. The ArchRules plugin will publish the rules in a separate Jar, and the Runner plugin
 will select that jar for running rules, but these rule classes will not end up in the runtime classpath.
@@ -103,6 +105,32 @@ public class LibraryArchRulesTest {
         EvaluationResult result = Runner.check(LibraryArchRules.noDeprecated, FailingCode.class);
         Assertions.assertTrue(result.hasViolation());
     }
+}
+```
+
+## Running Rules
+
+In order to run rules in a project, add the runner plugin:
+```kotlin
+plugins {
+    id("com.netflix.nebula.archrules.runner") version ("latest.release")
+}
+```
+
+This will create a task for running rules against each source set, eg. `checkArchRulesMain` for the Main source set.
+These tasks will run as dependencies of the `check` task.
+
+If you want to run rules on all source sets, add the rule library as a dependency to the `archRules` configuration:
+```kotlin
+dependencies {
+    archRules("your:rules:1.0.0")
+}
+```
+
+Rules that exist in a library on each sourceSet's classpath will also be used:
+```kotlin
+dependencies {
+    implementation("some.library:which-also-has-rules:1.0.0")
 }
 ```
 

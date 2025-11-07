@@ -7,6 +7,7 @@ repositories {
     mavenCentral()
 }
 dependencies {
+    implementation(project(":nebula-archrules-core"))
     testImplementation("net.javacrumbs.json-unit:json-unit-assertj:5.0.0")
     testImplementation("org.json:json:20250517")
 }
@@ -30,7 +31,7 @@ gradlePlugin {
 }
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
 testing {

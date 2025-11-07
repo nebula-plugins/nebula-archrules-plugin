@@ -12,7 +12,7 @@ public class Runner {
             return rule.evaluate(classesToCheck);
         } catch (AssertionError e) {
             // evaluate the rule again with more leniency so we can get the priority
-            final var result2 = rule.allowEmptyShould(true).evaluate(classesToCheck);
+            final EvaluationResult result2 = rule.allowEmptyShould(true).evaluate(classesToCheck);
             if (result2.hasViolation()) {
                 return result2;
             } else {
@@ -26,12 +26,13 @@ public class Runner {
     /**
      * Check a rule against some classes.
      * This can be invoked from the real Gradle plugin or unit tests for rules to ensure the same logic is observed there.
-     * @param rule the rule to run
+     *
+     * @param rule           the rule to run
      * @param classesToCheck the classes to run the rule against
      * @return the result, which contains information about failure
      */
     public static EvaluationResult check(ArchRule rule, Class<?>... classesToCheck) {
-        final var classes = new ClassFileImporter()
+        final JavaClasses classes = new ClassFileImporter()
                 .importClasses(classesToCheck);
         return check(rule, classes);
     }

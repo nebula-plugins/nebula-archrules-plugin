@@ -23,7 +23,7 @@ public class NoClassesMatchedEvent implements ConditionEvent {
 
     @Override
     public List<String> getDescriptionLines() {
-        return List.of(NO_MATCH_MESSAGE);
+        return Collections.singletonList(NO_MATCH_MESSAGE);
     }
 
     @Override
