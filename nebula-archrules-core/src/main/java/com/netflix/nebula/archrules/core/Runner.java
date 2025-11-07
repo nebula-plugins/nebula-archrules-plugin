@@ -26,6 +26,9 @@ public class Runner {
     /**
      * Check a rule against some classes.
      * This can be invoked from the real Gradle plugin or unit tests for rules to ensure the same logic is observed there.
+     * @param rule the rule to run
+     * @param classesToCheck the classes to run the rule against
+     * @return the result, which contains information about failure
      */
     public static EvaluationResult check(ArchRule rule, Class<?>... classesToCheck) {
         final var classes = new ClassFileImporter()

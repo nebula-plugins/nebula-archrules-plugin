@@ -98,4 +98,44 @@ class ArchrulesLibraryPluginTest {
             .first().isObject
             .containsEntry("name", "library-with-rules-0.0.1-archrules.jar")
     }
+
+    @Test
+    fun `plugin sets up tests for rules`() {
+        val runner = testProject(projectDir) {
+            settings {
+                name("library-with-rules")
+            }
+            rootProject {
+                group("com.example")
+                plugins {
+                    id("java-library")
+                    id("com.netflix.nebula.archrules.library")
+                }
+                repositories {
+                    maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
+                    mavenCentral()
+                }
+                src {
+                    main {
+                        exampleLibraryClass()
+                    }
+                    sourceSet("archRules") {
+                        exampleDeprecatedArchRule()
+                    }
+                    sourceSet("archRulesTest") {
+                        exampleTestForArchRule()
+                    }
+                }
+            }
+        }
+
+        val result = runner.run("check")
+
+        assertThat(result.task(":archRulesTest"))
+            .`as`("archRules test task runs")
+            .hasOutcome(TaskOutcome.SUCCESS)
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+    }
 }
