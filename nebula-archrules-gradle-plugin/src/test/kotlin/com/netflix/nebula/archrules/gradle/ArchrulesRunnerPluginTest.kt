@@ -35,7 +35,6 @@ class ArchrulesRunnerPluginTest {
     }
 
     @Test
-    @Disabled("needs a rules library published with new library plugin")
     fun `plugin checks each sourceset`() {
         val runner = testProject(projectDir) {
             settings {
@@ -50,7 +49,7 @@ class ArchrulesRunnerPluginTest {
                     mavenCentral()
                 }
                 dependencies(
-                    """archRules("com.netflix.nebula:archrules-deprecation:0.0.4")"""
+                    """archRules("com.netflix.nebula:archrules-deprecation:0.1.+")"""
                 )
                 src {
                     main {
@@ -94,7 +93,6 @@ class ArchrulesRunnerPluginTest {
     }
 
     @Test
-    @Disabled("needs a rules library published with new library plugin")
     fun `plugin checks each sourceset from its runtime`() {
         val runner = testProject(projectDir) {
             settings {
@@ -109,7 +107,7 @@ class ArchrulesRunnerPluginTest {
                     mavenCentral()
                 }
                 dependencies(
-                    """testImplementation("com.netflix.nebula:archrules-deprecation:0.0.4")"""
+                    """testImplementation("com.netflix.nebula:archrules-deprecation:0.1.+")"""
                 )
                 src {
                     main {
