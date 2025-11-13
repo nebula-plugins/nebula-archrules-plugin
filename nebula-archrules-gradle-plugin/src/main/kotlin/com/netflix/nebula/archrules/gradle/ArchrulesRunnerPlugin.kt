@@ -69,8 +69,20 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                         }
                     checkTask
                 }
+
+            val dataFiles = checkTasks.stream()
+                .map { it.get().dataFile.get() }
+                .toList()
+
+            val jsonReportTask = project.tasks.register<PrintJsonReportTask>("archRulesJsonReport") {
+                getDataFiles().set(dataFiles)
+                getJsonReportFile().set(archRulesReportDir.map { it.file("report.json").asFile })
+                dependsOn(checkTasks)
+            }
+
             project.tasks.named("check") {
                 dependsOn(checkTasks)
+                finalizedBy(jsonReportTask)
             }
         }
     }

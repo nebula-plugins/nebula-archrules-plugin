@@ -16,6 +16,9 @@ internal class IntegrationTest {
     @EnumSource(SupportedGradleVersion::class)
     fun test(gradleVersion: SupportedGradleVersion) {
         val runner = testProject(projectDir) {
+            properties {
+                gradleCache(true)
+            }
             subProject("library-with-rules") {
                 // a library that contains production code and rules to go along with it
                 plugins {

@@ -3,8 +3,10 @@ package com.netflix.nebula.archrules.gradle
 import nebula.test.dsl.TestKitAssertions.assertThat
 import nebula.test.dsl.main
 import nebula.test.dsl.plugins
+import nebula.test.dsl.properties
 import nebula.test.dsl.repositories
 import nebula.test.dsl.rootProject
+import nebula.test.dsl.run
 import nebula.test.dsl.settings
 import nebula.test.dsl.sourceSet
 import nebula.test.dsl.src
@@ -16,6 +18,8 @@ import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -34,9 +38,13 @@ class ArchrulesRunnerPluginTest {
         assertThat(configuration).isNotNull
     }
 
-    @Test
-    fun `plugin checks each sourceset`() {
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `plugin checks each sourceset`(gradleVersion: SupportedGradleVersion) {
         val runner = testProject(projectDir) {
+            properties {
+                gradleCache(true)
+            }
             settings {
                 name("consumer")
             }
@@ -63,7 +71,10 @@ class ArchrulesRunnerPluginTest {
             }
         }
 
-        val result = runner.run("check", "--stacktrace", "-x", "test")
+        val result = runner.run("check", "--stacktrace", "-x", "test"){
+            withGradleVersion(gradleVersion.version)
+            forwardOutput()
+        }
 
         assertThat(result.task(":checkArchRulesMain"))
             .`as`("archRules run for main source set")
@@ -71,6 +82,10 @@ class ArchrulesRunnerPluginTest {
 
         assertThat(result.task(":checkArchRulesTest"))
             .`as`("archRules run for test source set")
+            .hasOutcome(TaskOutcome.SUCCESS)
+
+        assertThat(result.task(":archRulesJsonReport"))
+            .`as`("archRules json report runs by default")
             .hasOutcome(TaskOutcome.SUCCESS)
 
         assertThat(result)
@@ -90,11 +105,19 @@ class ArchrulesRunnerPluginTest {
             .exists()
         val testErrors = readDetails(testReport)
         assertThat(testErrors).hasSize(1)
+
+        val jsonReport = projectDir.resolve("build/reports/archrules/report.json")
+        assertThat(jsonReport)
+            .`as`("json report created")
+            .exists()
     }
 
     @Test
     fun `plugin checks each sourceset from its runtime`() {
         val runner = testProject(projectDir) {
+            properties {
+                gradleCache(true)
+            }
             settings {
                 name("consumer")
             }
@@ -166,5 +189,4 @@ class ArchrulesRunnerPluginTest {
         }
         return list
     }
-
 }
