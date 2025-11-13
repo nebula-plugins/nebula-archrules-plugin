@@ -70,11 +70,11 @@ internal class IntegrationTest {
 
         assertThat(result.task(":code-to-check:checkArchRulesMain"))
             .`as`("archRules run for main source set")
-            .hasOutcome(TaskOutcome.SUCCESS)
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
         assertThat(result.task(":code-to-check:checkArchRulesTest"))
             .`as`("archRules run for test source set")
-            .hasOutcome(TaskOutcome.SUCCESS)
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
         assertThat(result.task(":code-to-check:check"))
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE)

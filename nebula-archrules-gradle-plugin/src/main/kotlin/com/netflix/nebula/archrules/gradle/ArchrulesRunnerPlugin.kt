@@ -8,6 +8,7 @@ import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.Usage
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.internal.extensions.stdlib.capitalized
+import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
@@ -27,6 +28,8 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                     attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling.EXTERNAL))
                 }
             }
+            val archRulesExt = project.extensions.create<ArchrulesExtension>("archRules")
+            archRulesExt.consoleReportEnabled.convention(true)
             val checkTasks = project.extensions.getByType<JavaPluginExtension>().sourceSets
                 .map { sourceSet ->
                     val checkTask =
@@ -80,9 +83,15 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                 dependsOn(checkTasks)
             }
 
+            val consoleReportTask = project.tasks.register<PrintConsoleReportTask>("archRulesConsoleReport") {
+                getDataFiles().set(dataFiles)
+                dependsOn(checkTasks)
+                onlyIf { archRulesExt.consoleReportEnabled.get() }
+            }
+
             project.tasks.named("check") {
                 dependsOn(checkTasks)
-                finalizedBy(jsonReportTask)
+                finalizedBy(jsonReportTask, consoleReportTask)
             }
         }
     }

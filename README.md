@@ -134,6 +134,13 @@ dependencies {
 }
 ```
 
+The plugin can generate JSON and console reports. Both are enabled by default. The console report can be disabled:
+```kotlin
+archRules {
+    consoleReportEnabled = false
+}
+```
+
 ## How it works
 
 The Archrules Library plugin produces a separate Jar for the `archRules` sourceset, which is exposed as an alternate variant of the library. 
