@@ -29,6 +29,9 @@ class ArchrulesLibraryPluginTest {
     @Test
     fun `plugin produces maven publication`() {
         val runner = testProject(projectDir) {
+            properties {
+                gradleCache(true)
+            }
             settings {
                 name("library-with-rules")
             }
@@ -65,7 +68,7 @@ class ArchrulesLibraryPluginTest {
 
         assertThat(result.task(":compileArchRulesJava"))
             .`as`("compile task runs for the archRules source set")
-            .hasOutcome(TaskOutcome.SUCCESS)
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
         assertThat(result.task(":archRulesJar"))
             .hasOutcome(TaskOutcome.SUCCESS)
         assertThat(result)
@@ -102,6 +105,9 @@ println(moduleMetadataJson)
     @Test
     fun `plugin sets up tests for rules`() {
         val runner = testProject(projectDir) {
+            properties {
+                gradleCache(true)
+            }
             settings {
                 name("library-with-rules")
             }
