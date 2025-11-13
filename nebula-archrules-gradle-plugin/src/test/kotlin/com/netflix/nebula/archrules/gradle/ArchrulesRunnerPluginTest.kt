@@ -78,14 +78,18 @@ class ArchrulesRunnerPluginTest {
 
         assertThat(result.task(":checkArchRulesMain"))
             .`as`("archRules run for main source set")
-            .hasOutcome(TaskOutcome.SUCCESS)
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
         assertThat(result.task(":checkArchRulesTest"))
             .`as`("archRules run for test source set")
-            .hasOutcome(TaskOutcome.SUCCESS)
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
         assertThat(result.task(":archRulesJsonReport"))
             .`as`("archRules json report runs by default")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        assertThat(result.task(":archRulesConsoleReport"))
+            .`as`("archRules console report runs by default")
             .hasOutcome(TaskOutcome.SUCCESS)
 
         assertThat(result)
@@ -110,6 +114,10 @@ class ArchrulesRunnerPluginTest {
         assertThat(jsonReport)
             .`as`("json report created")
             .exists()
+
+        assertThat(result.output)
+            .contains("ArchRule summary:")
+            .contains("deprecated                     LOW        (1 failures)")
     }
 
     @Test
@@ -148,11 +156,11 @@ class ArchrulesRunnerPluginTest {
 
         assertThat(result.task(":checkArchRulesMain"))
             .`as`("archRules run for main source set")
-            .hasOutcome(TaskOutcome.SUCCESS)
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
         assertThat(result.task(":checkArchRulesTest"))
             .`as`("archRules run for test source set")
-            .hasOutcome(TaskOutcome.SUCCESS)
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
         assertThat(result)
             .hasNoMutableStateWarnings()
@@ -171,6 +179,63 @@ class ArchrulesRunnerPluginTest {
             .exists()
         val testErrors = readDetails(testReport)
         assertThat(testErrors).hasSize(1)
+    }
+
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `console report can be disabled`(gradleVersion: SupportedGradleVersion) {
+        val runner = testProject(projectDir) {
+            properties {
+                gradleCache(true)
+            }
+            settings {
+                name("consumer")
+            }
+            rootProject {
+                plugins {
+                    id("java")
+                    id("com.netflix.nebula.archrules.runner")
+                }
+                repositories {
+                    mavenCentral()
+                }
+                dependencies(
+                    """archRules("com.netflix.nebula:archrules-deprecation:0.1.+")"""
+                )
+                rawBuildScript("""
+archRules {
+    consoleReportEnabled = false
+}
+"""
+                )
+                src {
+                    main {
+                        exampleLibraryClass()
+                        exampleDeprecatedUsage()
+                    }
+                    test {
+                        exampleDeprecatedUsage("FailingCodeTest")
+                    }
+                }
+            }
+        }
+
+        val result = runner.run("check", "--stacktrace", "-x", "test"){
+            withGradleVersion(gradleVersion.version)
+            forwardOutput()
+        }
+
+        assertThat(result.task(":archRulesConsoleReport"))
+            .`as`("archRules console report runs by default")
+            .hasOutcome(TaskOutcome.SKIPPED)
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+
+        assertThat(result.output)
+            .doesNotContain("ArchRule summary:")
+            .doesNotContain("deprecated                     LOW        (1 failures)")
     }
 
     fun readDetails(dataFile: File): List<RuleResult> {

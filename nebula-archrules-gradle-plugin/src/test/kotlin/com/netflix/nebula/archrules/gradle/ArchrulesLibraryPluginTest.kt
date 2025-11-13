@@ -139,7 +139,7 @@ println(moduleMetadataJson)
 
         assertThat(result.task(":archRulesTest"))
             .`as`("archRules test task runs")
-            .hasOutcome(TaskOutcome.SUCCESS)
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
         assertThat(result)
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
