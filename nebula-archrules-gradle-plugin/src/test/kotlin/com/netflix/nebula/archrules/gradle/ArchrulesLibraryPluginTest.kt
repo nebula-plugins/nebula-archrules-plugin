@@ -96,6 +96,12 @@ println(moduleMetadataJson)
             .containsEntry("name", "library-with-rules-0.0.1.jar")
 
         assertThatJson(moduleMetadataJson)
+            .inPath("$.variants[?(@.name=='archRulesApiElements')].files[0]")
+            .`as`("apiElements is not produced for archRules")
+            .isArray()
+            .isEmpty()
+
+        assertThatJson(moduleMetadataJson)
             .inPath("$.variants[?(@.name=='archRulesRuntimeElements')].files[0]")
             .isArray
             .first().isObject

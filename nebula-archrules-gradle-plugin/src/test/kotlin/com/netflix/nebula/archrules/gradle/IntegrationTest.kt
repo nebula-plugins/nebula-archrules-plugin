@@ -60,7 +60,7 @@ internal class IntegrationTest {
         serviceFile.parentFile.mkdirs()
         serviceFile.writeText("com.example.library.LibraryArchRules")
 
-        val result = runner.run("check") {
+        val result = runner.run("check", "--stacktrace") {
             withGradleVersion(gradleVersion.version)
             forwardOutput()
         }
