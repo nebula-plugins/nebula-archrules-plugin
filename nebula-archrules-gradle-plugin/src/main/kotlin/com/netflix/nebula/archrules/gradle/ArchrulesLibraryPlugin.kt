@@ -22,8 +22,9 @@ import org.gradle.kotlin.dsl.support.serviceOf
 import org.gradle.testing.base.TestingExtension
 
 class ArchrulesLibraryPlugin : Plugin<Project> {
+
     override fun apply(project: Project) {
-        val version = ArchrulesLibraryPlugin::class.java.`package`.implementationVersion ?: "latest.release"
+        val version = determineVersion()
         project.pluginManager.withPlugin("java") {
             val ext = project.extensions.getByType<JavaPluginExtension>()
             val archRulesSourceSet = ext.sourceSets.create("archRules")
@@ -96,6 +97,26 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                     project.configurations.getByName("archRulesRuntimeClasspath")
                 )
             )
+        }
+    }
+
+    /**
+     * The plugin should add dependencies on the core library of the same version
+     * However, there are 2 edge cases:
+     * 1) tests, where jar packaging with a version has not been done
+     * 2) the core library is published to maven central, whereas the plugin is published to Gradle Plugin Portal.
+     *      Maven central has a much longer delay, so for a while, there is a state where the plugin ios available,
+     *      but the corresponding core library is not yet available.
+     *      In this case, we can match to the latest version of the same major version,
+     *      which will solve the problem for any users who use dynamic minor or patch versions.
+     */
+    fun determineVersion(): String {
+        val metadataVersion = ArchrulesLibraryPlugin::class.java.`package`.implementationVersion
+        if (metadataVersion == null) {
+            return "latest.release" // this happens in tests
+        } else {
+            val majorVersion = metadataVersion.substringBefore(".")
+            return "$majorVersion.+" // in case maven central is behind GPP
         }
     }
 }
