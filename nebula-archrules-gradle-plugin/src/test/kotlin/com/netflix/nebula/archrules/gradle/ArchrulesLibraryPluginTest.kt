@@ -88,7 +88,7 @@ class ArchrulesLibraryPluginTest {
             .exists()
 
         val moduleMetadataJson = moduleMetadata.readText()
-println(moduleMetadataJson)
+        println(moduleMetadataJson)
         assertThatJson(moduleMetadataJson)
             .inPath("$.variants[?(@.name=='runtimeElements')].files[0]")
             .isArray
@@ -106,6 +106,46 @@ println(moduleMetadataJson)
             .isArray
             .first().isObject
             .containsEntry("name", "library-with-rules-0.0.1-arch-rules.jar")
+    }
+
+    @Test
+    fun `plugin produces proper outgoingVariants`() {
+        val runner = testProject(projectDir) {
+            properties {
+                gradleCache(true)
+            }
+            settings {
+                name("library-with-rules")
+            }
+            rootProject {
+                group("com.example")
+                // a library that contains production code and rules to go along with it
+                plugins {
+                    id("java-library")
+                    id("com.netflix.nebula.archrules.library")
+                    id("maven-publish")
+                }
+                repositories {
+                    maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
+                    mavenCentral()
+                }
+                declareMavenPublication()
+                src {
+                    main {
+                        exampleLibraryClass()
+                    }
+                    sourceSet("archRules") {
+                        exampleDeprecatedArchRule()
+                    }
+                }
+            }
+        }
+
+        val result = runner.run("outgoingVariants", "-Pversion=0.0.1")
+        assertThat(result.output)
+            .contains("Variant archRulesRuntimeElements")
+            .contains("Variant testResultsElementsForArchRulesTest")
+            .doesNotContain("Variant archRulesApiElements")
     }
 
     @Test
