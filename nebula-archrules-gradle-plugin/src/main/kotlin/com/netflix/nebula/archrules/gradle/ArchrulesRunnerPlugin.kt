@@ -18,6 +18,8 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
         val archRulesReportDir = project.layout.buildDirectory.dir("reports/archrules")
         project.plugins.withId("java") {
             project.configurations.register("archRules") {
+                isCanBeConsumed = false
+                isCanBeResolved = true
                 attributes {
                     attribute(
                         ArchRuleAttribute.ARCH_RULES_ATTRIBUTE,
