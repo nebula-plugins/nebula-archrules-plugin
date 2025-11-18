@@ -16,20 +16,20 @@ import org.gradle.kotlin.dsl.register
 class ArchrulesRunnerPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val archRulesReportDir = project.layout.buildDirectory.dir("reports/archrules")
-        project.plugins.withId("java") {
-            project.configurations.register("archRules") {
-                isCanBeConsumed = false
-                isCanBeResolved = true
-                attributes {
-                    attribute(
-                        ArchRuleAttribute.ARCH_RULES_ATTRIBUTE,
-                        project.objects.named<ArchRuleAttribute>(ARCH_RULES)
-                    )
-                    attribute(Usage.USAGE_ATTRIBUTE, project.objects.named<Usage>(Usage.JAVA_RUNTIME))
-                    attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named<Category>(Category.LIBRARY))
-                    attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling.EXTERNAL))
-                }
+        project.configurations.register("archRules") {
+            isCanBeConsumed = false
+            isCanBeResolved = true
+            attributes {
+                attribute(
+                    ArchRuleAttribute.ARCH_RULES_ATTRIBUTE,
+                    project.objects.named<ArchRuleAttribute>(ARCH_RULES)
+                )
+                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named<Usage>(Usage.JAVA_RUNTIME))
+                attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named<Category>(Category.LIBRARY))
+                attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling.EXTERNAL))
             }
+        }
+        project.plugins.withId("java") {
             val archRulesExt = project.extensions.create<ArchrulesExtension>("archRules")
             archRulesExt.consoleReportEnabled.convention(true)
             val checkTasks = project.extensions.getByType<JavaPluginExtension>().sourceSets
