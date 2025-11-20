@@ -55,12 +55,13 @@ class ViolationsUtil {
         }
 
         @JvmStatic
-        fun printSummary(results: Map<Rule, List<RuleResult>>, output: StyledTextOutput) {
-            results.forEach { (rule, results) ->
+        fun printSummary(resultMap: Map<Rule, List<RuleResult>>, output: StyledTextOutput) {
+            val maxRuleNameLength = resultMap.keys.maxOf { it.ruleName().length }
+            resultMap.forEach { (rule, results) ->
                 val failures = results.filter { it.status() != RuleResultStatus.PASS }
                 if (failures.isEmpty()) {
                     output.style(StyledTextOutput.Style.Success)
-                        .text(rule.ruleName().padEnd(30))
+                        .text(rule.ruleName().padEnd(maxRuleNameLength + 1))
                         .text(" ")
                         .text(rule.priority().asString().padEnd(10))
                         .println(" (No failures)")
@@ -71,7 +72,7 @@ class ViolationsUtil {
                         Priority.HIGH -> StyledTextOutput.Style.Failure
                     }
                     output.style(style)
-                        .text(rule.ruleName().padEnd(30))
+                        .text(rule.ruleName().padEnd(maxRuleNameLength + 1))
                         .text(" ")
                         .text(rule.priority().asString().padEnd(10))
                         .println(" (" + failures.size + " failures)")
