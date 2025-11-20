@@ -105,7 +105,7 @@ class ArchrulesRunnerPluginTest {
 
         assertThat(result.output)
             .contains("ArchRule summary:")
-            .contains("deprecated                     LOW        (1 failures)")
+            .contains("deprecated  LOW        (1 failures)")
     }
 
     @Test
@@ -225,6 +225,45 @@ archRules {
         assertThat(result.output)
             .doesNotContain("ArchRule summary:")
             .doesNotContain("deprecated                     LOW        (1 failures)")
+    }
+
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `plugin checks additional sourcesets`(gradleVersion: SupportedGradleVersion) {
+        val runner = testProject(projectDir) {
+            properties {
+                gradleCache(true)
+            }
+            settings {
+                name("consumer")
+            }
+            rootProject {
+                plugins {
+                    id("java")
+                    id("com.netflix.nebula.archrules.runner")
+                }
+                repositories {
+                    mavenCentral()
+                }
+                rawBuildScript("""sourceSets.create("custom")""")
+                dependencies(
+                    """archRules("com.netflix.nebula:archrules-deprecation:0.1.+")"""
+                )
+            }
+        }
+
+        val result = runner.run("check", "--stacktrace", "-x", "test") {
+            withGradleVersion(gradleVersion.version)
+            forwardOutput()
+        }
+
+        assertThat(result.task(":checkArchRulesCustom"))
+            .`as`("archRules run for main source set")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
     }
 
     fun readDetails(dataFile: File): List<RuleResult> {
