@@ -1,21 +1,9 @@
 package com.netflix.nebula.archrules.gradle
 
+import nebula.test.dsl.*
 import nebula.test.dsl.TestKitAssertions.assertThat
-import nebula.test.dsl.main
-import nebula.test.dsl.plugins
-import nebula.test.dsl.properties
-import nebula.test.dsl.repositories
-import nebula.test.dsl.rootProject
-import nebula.test.dsl.run
-import nebula.test.dsl.settings
-import nebula.test.dsl.sourceSet
-import nebula.test.dsl.src
-import nebula.test.dsl.test
-import nebula.test.dsl.testProject
-import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.testkit.runner.TaskOutcome
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
@@ -71,7 +59,7 @@ class ArchrulesRunnerPluginTest {
             }
         }
 
-        val result = runner.run("check", "--stacktrace", "-x", "test"){
+        val result = runner.run("check", "--stacktrace", "-x", "test") {
             withGradleVersion(gradleVersion.version)
             forwardOutput()
         }
@@ -202,7 +190,8 @@ class ArchrulesRunnerPluginTest {
                 dependencies(
                     """archRules("com.netflix.nebula:archrules-deprecation:0.1.+")"""
                 )
-                rawBuildScript("""
+                rawBuildScript(
+                    """
 archRules {
     consoleReportEnabled = false
 }
@@ -220,7 +209,7 @@ archRules {
             }
         }
 
-        val result = runner.run("check", "--stacktrace", "-x", "test"){
+        val result = runner.run("check", "--stacktrace", "-x", "test") {
             withGradleVersion(gradleVersion.version)
             forwardOutput()
         }

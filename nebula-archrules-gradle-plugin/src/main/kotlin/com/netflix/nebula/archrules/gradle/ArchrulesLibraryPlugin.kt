@@ -26,17 +26,33 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val version = determineVersion()
         project.pluginManager.withPlugin("java") {
-            val ext = project.extensions.getByType<JavaPluginExtension>()
-            val archRulesSourceSet = ext.sourceSets.create("archRules")
+            val javaExt = project.extensions.getByType<JavaPluginExtension>()
+            val archRulesSourceSet = javaExt.sourceSets.create("archRules")
             project.dependencies.add(
                 archRulesSourceSet.implementationConfigurationName,
                 "com.netflix.nebula:nebula-archrules-core:$version"
             )
+            val generateServicesTask = project.tasks.register<GenerateServicesRegistryTask>("generateServicesRegistry"){
+                archRuleServicesFile.set(
+                    project.layout.buildDirectory.file(
+                        "resources/archRules/META-INF/services/com.netflix.nebula.archrules.core.ArchRulesService"
+                    ).map { it.asFile }
+                )
+                ruleSourceClasses.setFrom(archRulesSourceSet.output)
+                dependsOn(archRulesSourceSet.classesTaskName)
+            }
+            project.tasks.named(archRulesSourceSet.classesTaskName){
+                finalizedBy(generateServicesTask)
+            }
+            project.tasks.named("processArchRulesResources"){
+                finalizedBy(generateServicesTask)
+            }
             val jarTask = project.tasks.register<Jar>("archRulesJar") {
                 description = "Assembles a jar archive containing the classes of the arch rules."
                 group = "build"
                 from(archRulesSourceSet.output)
                 archiveClassifier.set("arch-rules")
+                dependsOn(generateServicesTask)
             }
             registerRuntimeFeatureForSourceSet(project, archRulesSourceSet, jarTask)
             project.pluginManager.withPlugin("jvm-test-suite") {
@@ -48,6 +64,16 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                             implementation(project())
                             implementation(archRulesSourceSet.output)
                             implementation("com.netflix.nebula:nebula-archrules-core:$version")
+                        }
+                        javaExt.sourceSets.named("archRulesTest").configure {
+                            project.tasks.named(compileJavaTaskName){
+                                dependsOn(generateServicesTask)
+                            }
+                            project.pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+                                project.tasks.named(getCompileTaskName("kotlin")) {
+                                    dependsOn(generateServicesTask)
+                                }
+                            }
                         }
                     }
                 }
