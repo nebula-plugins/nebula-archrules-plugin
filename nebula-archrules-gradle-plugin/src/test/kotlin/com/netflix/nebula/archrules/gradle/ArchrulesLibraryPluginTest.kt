@@ -71,9 +71,17 @@ class ArchrulesLibraryPluginTest {
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
         assertThat(result.task(":archRulesJar"))
             .hasOutcome(TaskOutcome.SUCCESS)
+        assertThat(result.task(":generateServicesRegistry"))
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
         assertThat(result)
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
+
+        val serviceFile = projectDir.resolve("build/resources/archRules/META-INF/services/com.netflix.nebula.archrules.core.ArchRulesService")
+        assertThat(serviceFile)
+            .`as`("service file is created")
+            .exists()
+            .content().contains("com.example.library.LibraryArchRules")
 
         assertThat(projectDir.resolve("build/libs/library-with-rules-0.0.1.jar"))
             .`as`("Library Jar is created")

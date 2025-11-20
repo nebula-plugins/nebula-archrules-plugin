@@ -61,8 +61,6 @@ public class LibraryArchRules implements ArchRulesService {
 }
 ```
 
-You will also need to create a file at `src/archRules/resources/META-INF/services/com.netflix.nebula.archrules.core.ArchRulesService` and add the fully qualified name of your rules class to that file.
-
 When authoring rules about the usage of your own library code, it is recommended to colocate your rules library in the
 same project as the library code. The ArchRules plugin will publish the rules in a separate Jar, and the Runner plugin
 will select that jar for running rules, but these rule classes will not end up in the runtime classpath.
@@ -143,7 +141,8 @@ archRules {
 
 ## How it works
 
-The Archrules Library plugin produces a separate Jar for the `archRules` sourceset, which is exposed as an alternate variant of the library. 
+The Archrules Library plugin produces a separate Jar for the `archRules` sourceset, which is exposed as an alternate variant of the library. It also will automatically generate a `META-INF/services` file which contains a reference for each implementation of `com.netflix.nebula.archrules.core.ArchRulesService` to declare it as a service provider.
+The Archrules Runner plugin uses a Java [ServiceLoader](https://devdocs.io/openjdk~25/java.base/java/util/serviceloader) to discover all implementations of `com.netflix.nebula.archrules.core.ArchRulesService` in the rule libraries.
 
 ## LICENSE
 

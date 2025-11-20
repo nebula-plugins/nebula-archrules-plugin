@@ -55,11 +55,6 @@ internal class IntegrationTest {
             }
         }
 
-        val serviceFile = projectDir
-                .resolve("library-with-rules/src/archRules/resources/META-INF/services/com.netflix.nebula.archrules.core.ArchRulesService")
-        serviceFile.parentFile.mkdirs()
-        serviceFile.writeText("com.example.library.LibraryArchRules")
-
         val result = runner.run("check", "--stacktrace") {
             withGradleVersion(gradleVersion.version)
             forwardOutput()
@@ -135,11 +130,6 @@ internal class IntegrationTest {
             }
         }
 
-        val serviceFile = projectDir
-            .resolve("library-with-rules/src/archRules/resources/META-INF/services/com.netflix.nebula.archrules.core.ArchRulesService")
-        serviceFile.parentFile.mkdirs()
-        serviceFile.writeText("com.example.library.LibraryArchRules")
-
         val result = runner.run("check", "--stacktrace") {
             withGradleVersion(gradleVersion.version)
             forwardOutput()
@@ -213,11 +203,6 @@ internal class IntegrationTest {
                 }
             }
         }
-
-        val serviceFile = projectDir
-            .resolve("library-with-rules/src/archRules/resources/META-INF/services/com.netflix.nebula.archrules.core.ArchRulesService")
-        serviceFile.parentFile.mkdirs()
-        serviceFile.writeText("com.example.library.LibraryArchRules")
 
         val result = runner.run("check", "--stacktrace") {
             withGradleVersion(gradleVersion.version)
