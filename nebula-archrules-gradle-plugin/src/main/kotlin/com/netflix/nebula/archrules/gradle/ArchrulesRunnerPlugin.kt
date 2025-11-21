@@ -36,13 +36,17 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                 }
             val checkTasks = project.tasks.withType<CheckRulesTask>()
             val jsonReportTask = project.tasks.register<PrintJsonReportTask>("archRulesJsonReport") {
-                getDataFiles().set(project.fileTree(archRulesReportDir).filter { it.extension == "data" })
+                getDataFiles().set(
+                    project.provider { (project.tasks.withType<CheckRulesTask>().flatMap { it.outputs.files }) }
+                )
                 getJsonReportFile().set(archRulesReportDir.map { it.file("report.json").asFile })
                 dependsOn(checkTasks)
             }
 
             val consoleReportTask = project.tasks.register<PrintConsoleReportTask>("archRulesConsoleReport") {
-                getDataFiles().set(project.fileTree(archRulesReportDir).filter { it.extension == "data" })
+                getDataFiles().set(
+                    project.provider { (project.tasks.withType<CheckRulesTask>().flatMap { it.outputs.files }) }
+                )
                 dependsOn(checkTasks)
                 onlyIf { archRulesExt.consoleReportEnabled.get() }
             }

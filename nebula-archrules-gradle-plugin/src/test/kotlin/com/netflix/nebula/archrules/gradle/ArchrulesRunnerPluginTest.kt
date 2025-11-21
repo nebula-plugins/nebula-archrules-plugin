@@ -2,6 +2,7 @@ package com.netflix.nebula.archrules.gradle
 
 import nebula.test.dsl.*
 import nebula.test.dsl.TestKitAssertions.assertThat
+import org.gradle.kotlin.dsl.named
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Test
@@ -24,6 +25,21 @@ class ArchrulesRunnerPluginTest {
         project.plugins.apply(ArchrulesRunnerPlugin::class.java)
         val configuration = project.configurations.findByName("archRules")
         assertThat(configuration).isNotNull
+    }
+
+    @Test
+    fun `report inputs are correct`() {
+        val project = ProjectBuilder.builder().build()
+        project.plugins.apply("java")
+        project.plugins.apply(ArchrulesRunnerPlugin::class.java)
+        val consoleReport = project.tasks.named<PrintConsoleReportTask>("archRulesConsoleReport")
+        assertThat(consoleReport.get().dataFiles.get())
+            .`as`("console report inputs are correct")
+            .hasSize(2)
+        val jsonReport = project.tasks.named<PrintJsonReportTask>("archRulesJsonReport")
+        assertThat(jsonReport.get().dataFiles.get())
+            .`as`("json report inputs are correct")
+            .hasSize(2)
     }
 
     @ParameterizedTest
