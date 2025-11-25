@@ -56,7 +56,7 @@ class ViolationsUtil {
 
         @JvmStatic
         fun printSummary(resultMap: Map<Rule, List<RuleResult>>, output: StyledTextOutput) {
-            val maxRuleNameLength = resultMap.keys.maxOf { it.ruleName().length }
+            val maxRuleNameLength = resultMap.keys.maxOfOrNull { it.ruleName().length } ?: 1
             resultMap.forEach { (rule, results) ->
                 val failures = results.filter { it.status() != RuleResultStatus.PASS }
                 if (failures.isEmpty()) {
