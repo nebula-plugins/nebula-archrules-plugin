@@ -167,14 +167,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 
 public class LibraryArchRulesTest {
+    @Deprecated
+    static void deprecatedMethod(){
+    }
     static class PassingCode {
         public void aMethod() {
-            LibraryClass.newApi();
         }
     }     
     static class FailingCode {
         public void aMethod() {
-            LibraryClass.deprecatedApi();
+            deprecatedMethod();
         }
     }
     
