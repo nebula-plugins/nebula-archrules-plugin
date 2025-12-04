@@ -26,6 +26,9 @@ abstract class CheckRulesTask @Inject constructor(private val workerExecutor: Wo
 
     @TaskAction
     fun checkRules() {
+        if(logger.isInfoEnabled) {
+            logger.info("rules jars: "+ rulesClasspath.files.joinToString("\n") { it.name })
+        }
         val workQueue: WorkQueue = workerExecutor.classLoaderIsolation {
             classpath.from(rulesClasspath)
         }

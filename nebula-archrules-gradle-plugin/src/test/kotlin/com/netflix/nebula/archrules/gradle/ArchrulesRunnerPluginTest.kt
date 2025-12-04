@@ -282,6 +282,88 @@ archRules {
             .hasNoDeprecationWarnings()
     }
 
+    @Test
+    fun `test dependencies without arch-rules`() {
+        val runner = testProject(projectDir) {
+            properties {
+                gradleCache(true)
+            }
+            subProject("library-with-rules") {
+                // a library that contains production code and rules to go along with it
+                plugins {
+                    id("java-library")
+                    id("com.netflix.nebula.archrules.library")
+                }
+                repositories {
+                    maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
+                    mavenCentral()
+                }
+                src {
+                    main {
+                        exampleLibraryClass()
+                    }
+                    sourceSet("archRules") {
+                        exampleDeprecatedArchRule()
+                    }
+                }
+            }
+            subProject("normal-library") {
+                // a library that contains production code and rules to go along with it
+                plugins {
+                    id("java-library")
+                }
+                repositories {
+                    maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
+                    mavenCentral()
+                }
+                src {
+                    main {
+                        java(
+                            "com/example/library/LibraryClass2.java",
+                            //language=java
+                            """
+package com.example.library;
+                            
+public class LibraryClass2 {
+    public static void newApi() {
+    }
+    
+    @Deprecated
+    public static void deprecatedApi() {
+    }
+}
+"""
+                        )
+                    }
+                }
+            }
+            subProject("code-to-check") {
+                // a project which consumes libraries which should have the rules evaluated against it
+                plugins {
+                    id("java")
+                    id("com.netflix.nebula.archrules.runner")
+                }
+                dependencies(
+                    """implementation(project(":library-with-rules"))""",
+                    """implementation(project(":normal-library"))"""
+                )
+                src {
+                    main {
+                        exampleDeprecatedUsage()
+                    }
+                }
+            }
+        }
+
+        val result = runner.run("check", "--stacktrace", "--info")
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+
+        assertThat(result.output).doesNotContain("normal-library.jar")
+    }
+
     fun readDetails(dataFile: File): List<RuleResult> {
         val list: MutableList<RuleResult> = mutableListOf()
         try {
