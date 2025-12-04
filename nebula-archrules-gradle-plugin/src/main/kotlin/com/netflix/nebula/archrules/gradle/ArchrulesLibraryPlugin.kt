@@ -62,7 +62,7 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                         useJUnitJupiter()
                         dependencies {
                             implementation(project())
-                            implementation(archRulesSourceSet.output)
+                            implementation(archRulesSourceSet.runtimeClasspath)
                             implementation("com.netflix.nebula:nebula-archrules-core:$version")
                         }
                         javaExt.sourceSets.named("archRulesTest").configure {

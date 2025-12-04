@@ -198,4 +198,67 @@ class ArchrulesLibraryPluginTest {
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
     }
+
+    @Test
+    fun `plugin sets up tests for rules with dependencies`() {
+        val runner = testProject(projectDir) {
+            properties {
+                gradleCache(true)
+            }
+            settings {
+                name("library-with-rules")
+            }
+            subProject("rules") {
+                group("com.example")
+                plugins {
+                    id("java-library")
+                    id("com.netflix.nebula.archrules.library")
+                }
+                repositories {
+                    maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
+                    mavenCentral()
+                }
+                dependencies(
+                    """archRulesImplementation(project(":helper"))""",
+                    """archRulesTestImplementation("org.jspecify:jspecify:1.0.0")"""
+                )
+                src {
+                    main {
+                        exampleLibraryClass()
+                    }
+                    sourceSet("archRules") {
+                        exampleNullabilityArchRule() // rules that uses a helper from a dependency
+                    }
+                    sourceSet("archRulesTest") {
+                        exampleTestForNullabilityArchRule()
+                    }
+                }
+            }
+            subProject("helper") {
+                group("com.example")
+                plugins {
+                    id("java-library")
+                }
+                repositories {
+                    maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
+                    mavenCentral()
+                }
+                dependencies("""implementation("com.tngtech.archunit:archunit:1.4.1")""")
+                src {
+                    main {
+                        exampleHelperClass()
+                    }
+                }
+            }
+        }
+
+        val result = runner.run("check", "--stacktrace")
+
+        assertThat(result.task(":rules:archRulesTest"))
+            .`as`("archRules test task runs")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+    }
 }
