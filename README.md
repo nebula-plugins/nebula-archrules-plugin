@@ -65,6 +65,14 @@ When authoring rules about the usage of your own library code, it is recommended
 same project as the library code. The ArchRules plugin will publish the rules in a separate Jar, and the Runner plugin
 will select that jar for running rules, but these rule classes will not end up in the runtime classpath.
 
+You may also create a "standalone" rules library which contains only `archRules` sources, and not `main` sources. These are useful when you want to write rules a bout libraries you do not control. They can be applied to downstream project's `archRules` configuration so that the Runner plugin will run these rules against any source set.
+
+#### Dependencies
+
+You may declare dependencies on the `archRulesImplementation` configuration. This is useful for 2 use cases:
+1) using a dependency as helper for your rule code
+2) transitively depending on a standalone rules library so that its rules are run in any project which runs the current project's rules
+
 ### Testing Rules
 
 The ArchRules Library plugin creates a test suite called `archRulesTest`. You can write unit tests for your rules in the `archRulesTest` source set.

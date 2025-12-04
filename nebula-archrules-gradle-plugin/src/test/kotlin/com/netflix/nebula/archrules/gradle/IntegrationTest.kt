@@ -44,6 +44,10 @@ internal class IntegrationTest {
                     id("java")
                     id("com.netflix.nebula.archrules.runner")
                 }
+                repositories {
+                    maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
+                    mavenCentral()
+                }
                 dependencies(
                     """implementation(project(":library-with-rules"))"""
                 )

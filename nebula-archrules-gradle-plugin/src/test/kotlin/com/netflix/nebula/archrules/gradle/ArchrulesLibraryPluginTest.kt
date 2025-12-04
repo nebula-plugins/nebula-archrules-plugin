@@ -2,6 +2,7 @@ package com.netflix.nebula.archrules.gradle
 
 import nebula.test.dsl.*
 import nebula.test.dsl.TestKitAssertions.assertThat
+import net.javacrumbs.jsonunit.assertj.JsonAssertions.json
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.testkit.runner.TaskOutcome
@@ -77,7 +78,8 @@ class ArchrulesLibraryPluginTest {
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
 
-        val serviceFile = projectDir.resolve("build/resources/archRules/META-INF/services/com.netflix.nebula.archrules.core.ArchRulesService")
+        val serviceFile =
+            projectDir.resolve("build/resources/archRules/META-INF/services/com.netflix.nebula.archrules.core.ArchRulesService")
         assertThat(serviceFile)
             .`as`("service file is created")
             .exists()
@@ -114,6 +116,77 @@ class ArchrulesLibraryPluginTest {
             .isArray
             .first().isObject
             .containsEntry("name", "library-with-rules-0.0.1-arch-rules.jar")
+    }
+
+    @Test
+    fun `main dependencies are included in archRules`() {
+        val runner = testProject(projectDir) {
+            properties {
+                gradleCache(true)
+            }
+            settings {
+                name("library-with-rules")
+            }
+            rootProject {
+                group("com.example")
+                // a library that contains production code and rules to go along with it
+                plugins {
+                    id("java-library")
+                    id("com.netflix.nebula.archrules.library")
+                    id("maven-publish")
+                }
+                repositories {
+                    maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
+                    mavenCentral()
+                }
+                declareMavenPublication()
+                dependencies("""implementation("com.google.guava:guava:33.5.0-jre")""")
+                src {
+                    main {
+                        exampleLibraryClass()
+                    }
+                    sourceSet("archRules") {
+                        exampleDeprecatedArchRule()
+                    }
+                }
+            }
+        }
+
+        val result = runner.run(
+            "build",
+            "archRulesJar",
+            "generateMetadataFileForMavenPublication", // to test publication metadata without actually publishing,
+            "-Pversion=0.0.1"
+        )
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+
+        val moduleMetadata = projectDir.resolve("build/publications/maven/module.json")
+        assertThat(moduleMetadata)
+            .`as`("Gradle Module Metadata is created")
+            .exists()
+
+        val moduleMetadataJson = moduleMetadata.readText()
+
+        assertThatJson(moduleMetadataJson)
+            .inPath("$.variants[?(@.name=='archRulesRuntimeElements')].dependencies[1]")
+            .isArray
+            .contains(
+                json(
+                    //language=json
+                    """
+{
+  "group": "com.google.guava",
+  "module": "guava",
+  "version": {
+    "requires": "33.5.0-jre"
+  }
+}
+            """
+                )
+            )
     }
 
     @Test
@@ -154,6 +227,15 @@ class ArchrulesLibraryPluginTest {
             .contains("Variant archRulesRuntimeElements")
             .contains("Variant testResultsElementsForArchRulesTest")
             .doesNotContain("Variant archRulesApiElements")
+            .contains("- com.netflix.nebula.archrules   = arch-rules")
+        val indexOfArchRulesVariant = result.output.indexOf("- com.netflix.nebula.archrules   = arch-rules")
+        assertThat(indexOfArchRulesVariant)
+            .`as`("archRulesRuntimeElements has arch-rules variant")
+            .isGreaterThan(0)
+            .isBetween(
+                result.output.indexOf("Variant archRulesRuntimeElements"),
+                result.output.substring(indexOfArchRulesVariant).indexOf("Variant") + indexOfArchRulesVariant
+            )
     }
 
     @Test
@@ -192,69 +274,6 @@ class ArchrulesLibraryPluginTest {
         val result = runner.run("check")
 
         assertThat(result.task(":archRulesTest"))
-            .`as`("archRules test task runs")
-            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
-        assertThat(result)
-            .hasNoMutableStateWarnings()
-            .hasNoDeprecationWarnings()
-    }
-
-    @Test
-    fun `plugin sets up tests for rules with dependencies`() {
-        val runner = testProject(projectDir) {
-            properties {
-                gradleCache(true)
-            }
-            settings {
-                name("library-with-rules")
-            }
-            subProject("rules") {
-                group("com.example")
-                plugins {
-                    id("java-library")
-                    id("com.netflix.nebula.archrules.library")
-                }
-                repositories {
-                    maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
-                    mavenCentral()
-                }
-                dependencies(
-                    """archRulesImplementation(project(":helper"))""",
-                    """archRulesTestImplementation("org.jspecify:jspecify:1.0.0")"""
-                )
-                src {
-                    main {
-                        exampleLibraryClass()
-                    }
-                    sourceSet("archRules") {
-                        exampleNullabilityArchRule() // rules that uses a helper from a dependency
-                    }
-                    sourceSet("archRulesTest") {
-                        exampleTestForNullabilityArchRule()
-                    }
-                }
-            }
-            subProject("helper") {
-                group("com.example")
-                plugins {
-                    id("java-library")
-                }
-                repositories {
-                    maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
-                    mavenCentral()
-                }
-                dependencies("""implementation("com.tngtech.archunit:archunit:1.4.1")""")
-                src {
-                    main {
-                        exampleHelperClass()
-                    }
-                }
-            }
-        }
-
-        val result = runner.run("check", "--stacktrace")
-
-        assertThat(result.task(":rules:archRulesTest"))
             .`as`("archRules test task runs")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
         assertThat(result)

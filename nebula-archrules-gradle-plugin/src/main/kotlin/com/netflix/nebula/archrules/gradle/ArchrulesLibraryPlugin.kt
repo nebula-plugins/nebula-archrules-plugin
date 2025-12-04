@@ -28,29 +28,43 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
         project.pluginManager.withPlugin("java") {
             val javaExt = project.extensions.getByType<JavaPluginExtension>()
             val archRulesSourceSet = javaExt.sourceSets.create("archRules")
+            project.configurations.named(archRulesSourceSet.implementationConfigurationName).configure {
+                extendsFrom(project.configurations.getByName(javaExt.sourceSets.getByName("main").implementationConfigurationName))
+            }
+            project.configurations.named(archRulesSourceSet.runtimeClasspathConfigurationName).configure {
+                attributes {
+                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                }
+            }
+            project.configurations.named(archRulesSourceSet.compileClasspathConfigurationName).configure {
+                attributes {
+                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                }
+            }
             project.dependencies.add(
                 archRulesSourceSet.implementationConfigurationName,
                 "com.netflix.nebula:nebula-archrules-core:$version"
             )
-            val generateServicesTask = project.tasks.register<GenerateServicesRegistryTask>("generateServicesRegistry"){
-                archRuleServicesFile.set(
-                    project.layout.buildDirectory.file(
-                        "resources/archRules/META-INF/services/com.netflix.nebula.archrules.core.ArchRulesService"
-                    ).map { it.asFile }
-                )
-                ruleSourceClasses.setFrom(archRulesSourceSet.output)
-                dependsOn(archRulesSourceSet.classesTaskName)
-            }
-            project.tasks.named(archRulesSourceSet.classesTaskName){
+            val generateServicesTask =
+                project.tasks.register<GenerateServicesRegistryTask>("generateServicesRegistry") {
+                    archRuleServicesFile.set(
+                        project.layout.buildDirectory.file(
+                            "resources/archRules/META-INF/services/com.netflix.nebula.archrules.core.ArchRulesService"
+                        ).map { it.asFile }
+                    )
+                    ruleSourceClasses.setFrom(archRulesSourceSet.output)
+                    dependsOn(archRulesSourceSet.classesTaskName)
+                }
+            project.tasks.named(archRulesSourceSet.classesTaskName) {
                 finalizedBy(generateServicesTask)
             }
-            project.tasks.named("processArchRulesResources"){
+            project.tasks.named("processArchRulesResources") {
                 finalizedBy(generateServicesTask)
             }
             val jarTask = project.tasks.register<Jar>("archRulesJar") {
                 description = "Assembles a jar archive containing the classes of the arch rules."
                 group = "build"
-                from(archRulesSourceSet.output)
+                from(archRulesSourceSet.output, javaExt.sourceSets.getByName("main").output)
                 archiveClassifier.set("arch-rules")
                 dependsOn(generateServicesTask)
             }
@@ -61,17 +75,31 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                     register("archRulesTest", JvmTestSuite::class.java) {
                         useJUnitJupiter()
                         dependencies {
-                            implementation(project())
-                            implementation(archRulesSourceSet.runtimeClasspath)
+                            implementation(archRulesSourceSet.output)
                             implementation("com.netflix.nebula:nebula-archrules-core:$version")
                         }
                         javaExt.sourceSets.named("archRulesTest").configure {
-                            project.tasks.named(compileJavaTaskName){
+                            project.tasks.named(compileJavaTaskName) {
                                 dependsOn(generateServicesTask)
                             }
                             project.pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
                                 project.tasks.named(getCompileTaskName("kotlin")) {
                                     dependsOn(generateServicesTask)
+                                }
+                            }
+                            project.configurations.named(implementationConfigurationName) {
+                                extendsFrom(project.configurations.getByName(javaExt.sourceSets.getByName("main").implementationConfigurationName))
+                            }
+                            project.configurations.named(runtimeClasspathConfigurationName).configure {
+                                extendsFrom(project.configurations.getByName(archRulesSourceSet.runtimeClasspathConfigurationName))
+                                attributes {
+                                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                                }
+                            }
+                            project.configurations.named(compileClasspathConfigurationName).configure {
+                                extendsFrom(project.configurations.getByName(archRulesSourceSet.compileClasspathConfigurationName))
+                                attributes {
+                                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
                                 }
                             }
                         }

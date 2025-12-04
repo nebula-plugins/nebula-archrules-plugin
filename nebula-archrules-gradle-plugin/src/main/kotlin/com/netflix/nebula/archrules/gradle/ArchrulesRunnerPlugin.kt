@@ -60,35 +60,16 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
 
     fun Project.configureCheckTaskForSourceSet(sourceSet: SourceSet) {
         val archRulesReportDir = project.layout.buildDirectory.dir("reports/archrules")
+        val sourceSetArchRulesRuntime = configurations.resolvable(sourceSet.name + "ArchRulesRuntime") {
+            extendsFrom(configurations.getByName(sourceSet.runtimeClasspathConfigurationName))
+            attributes {
+                attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named<ArchRuleAttribute>(ARCH_RULES))
+            }
+        }
         tasks.register<CheckRulesTask>("checkArchRules" + sourceSet.name.capitalized()) {
             description = "Checks ArchRules on ${sourceSet.name}"
-            val artifactView =
-                project.configurations.getByName(sourceSet.runtimeClasspathConfigurationName)
-                    .incoming
-                    .artifactView {
-                        withVariantReselection()
-                        attributes {
-                            attribute(
-                                ArchRuleAttribute.ARCH_RULES_ATTRIBUTE,
-                                project.objects.named<ArchRuleAttribute>(ARCH_RULES)
-                            )
-                            attribute(
-                                Usage.USAGE_ATTRIBUTE,
-                                project.objects.named<Usage>(Usage.JAVA_RUNTIME)
-                            )
-                            attribute(
-                                Category.CATEGORY_ATTRIBUTE,
-                                project.objects.named<Category>(Category.LIBRARY)
-                            )
-                            attribute(
-                                Bundling.BUNDLING_ATTRIBUTE,
-                                project.objects.named(Bundling.EXTERNAL)
-                            )
-                        }
-                        lenient(false)
-                    }
             rulesClasspath.setFrom(
-                artifactView.files,
+                sourceSetArchRulesRuntime,
                 project.configurations.getByName("archRules")
             )
             dataFile.set(archRulesReportDir.map {
