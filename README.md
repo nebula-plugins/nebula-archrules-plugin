@@ -147,6 +147,13 @@ archRules {
 }
 ```
 
+You can also disable printing summary lines for passing rules to reduce noise:
+```kotlin
+archRules {
+    skipPassingSummaries = true
+}
+```
+
 ## How it works
 
 The Archrules Library plugin produces a separate Jar for the `archRules` sourceset, which is exposed as an alternate variant of the library. It also will automatically generate a `META-INF/services` file which contains a reference for each implementation of `com.netflix.nebula.archrules.core.ArchRulesService` to declare it as a service provider.

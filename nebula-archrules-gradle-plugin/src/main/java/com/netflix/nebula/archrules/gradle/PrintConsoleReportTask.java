@@ -3,6 +3,7 @@ package com.netflix.nebula.archrules.gradle;
 import com.tngtech.archunit.lang.Priority;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.provider.ListProperty;
+import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.*;
 import org.gradle.internal.logging.text.StyledTextOutput;
 import org.gradle.internal.logging.text.StyledTextOutputFactory;
@@ -25,6 +26,13 @@ abstract public class PrintConsoleReportTask extends DefaultTask {
     @PathSensitive(PathSensitivity.RELATIVE)
     abstract public ListProperty<@NonNull File> getDataFiles();
 
+    /**
+     * The data files to read in. These files should container binary data representing {@link RuleResult}s
+     * @return all data files to process
+     */
+    @Input
+    abstract public Property<@NonNull Boolean> getSummaryForPassingDisabled();
+
     @TaskAction
     public void printReport() {
         final var consoleOutput = getServices().get(StyledTextOutputFactory.class).create("archrules");
@@ -32,7 +40,7 @@ abstract public class PrintConsoleReportTask extends DefaultTask {
                 .flatMap(it -> ViolationsUtil.readDetails(it).stream())
                 .toList();
         final var byRule = ViolationsUtil.consolidatedFailures(list);
-        ViolationsUtil.printSummary(byRule, consoleOutput);
+        ViolationsUtil.printSummary(byRule, consoleOutput, getSummaryForPassingDisabled().get());
         if (list.stream().anyMatch(it -> it.status() != RuleResultStatus.FAIL && it.rule().priority() == Priority.LOW) && !getLogger().isInfoEnabled()) {
             consoleOutput.style(StyledTextOutput.Style.Header)
                     .text("Note: ")
