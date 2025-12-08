@@ -12,14 +12,27 @@ internal class ViolationsUtilTest {
         val output = MockStyledTextOutput()
         val rule = Rule("RuleClass", "RuleName", "description", Priority.MEDIUM)
         val results = listOf(RuleResult(rule, "message", RuleResultStatus.PASS))
-        ViolationsUtil.printSummary(mapOf(rule to results), output)
-        assertThat(output.getOutput()).contains("RuleName  MEDIUM     (No failures)")
+        ViolationsUtil.printSummary(mapOf(rule to results), output, false)
+        assertThat(output.getOutput())
+            .contains("RuleClass")
+            .contains("RuleName  MEDIUM     (No failures)")
+    }
+
+    @Test
+    fun `test printSummary skipPassing`() {
+        val output = MockStyledTextOutput()
+        val rule = Rule("RuleClass", "RuleName", "description", Priority.MEDIUM)
+        val results = listOf(RuleResult(rule, "message", RuleResultStatus.PASS))
+        ViolationsUtil.printSummary(mapOf(rule to results), output, true)
+        assertThat(output.getOutput())
+            .contains("RuleClass")
+            .doesNotContain("RuleName")
     }
 
     @Test
     fun `test printSummary empty results`() {
         val output = MockStyledTextOutput()
-        ViolationsUtil.printSummary(mapOf(), output)
+        ViolationsUtil.printSummary(mapOf(), output, false)
         assertThat(output.getOutput()).isEmpty()
     }
 }

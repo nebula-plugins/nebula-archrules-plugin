@@ -282,6 +282,104 @@ archRules {
             .hasNoDeprecationWarnings()
     }
 
+    @Test
+    fun `passing summaries print by default`() {
+        val runner = testProject(projectDir) {
+            properties {
+                gradleCache(true)
+            }
+            settings {
+                name("consumer")
+            }
+            rootProject {
+                plugins {
+                    id("java")
+                    id("com.netflix.nebula.archrules.runner")
+                }
+                repositories {
+                    mavenCentral()
+                }
+                dependencies(
+                    """archRules("com.netflix.nebula:archrules-deprecation:0.1.+")"""
+                )
+                src {
+                    main {
+                        exampleLibraryClass()
+                    }
+                    test {
+                        exampleDeprecatedUsage("FailingCodeTest")
+                    }
+                }
+            }
+        }
+
+        val result = runner.run("check", "--stacktrace", "-x", "test")
+
+        assertThat(result.task(":archRulesConsoleReport"))
+            .`as`("archRules console report runs by default")
+            .hasOutcome(TaskOutcome.SUCCESS)
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+
+        assertThat(result.output)
+            .contains("com.netflix.nebula.archrules.deprecation.DeprecationRule")
+            .contains("deprecated  LOW        (No failures)")
+    }
+
+    @Test
+    fun `passing summaries can be disabled`() {
+        val runner = testProject(projectDir) {
+            properties {
+                gradleCache(true)
+            }
+            settings {
+                name("consumer")
+            }
+            rootProject {
+                plugins {
+                    id("java")
+                    id("com.netflix.nebula.archrules.runner")
+                }
+                repositories {
+                    mavenCentral()
+                }
+                dependencies(
+                    """archRules("com.netflix.nebula:archrules-deprecation:0.1.+")"""
+                )
+                src {
+                    main {
+                        exampleLibraryClass()
+                    }
+                    test {
+                        exampleDeprecatedUsage("FailingCodeTest")
+                    }
+                }
+                rawBuildScript("""
+archRules {
+    skipPassingSummaries = true
+}   
+"""
+                )
+            }
+        }
+
+        val result = runner.run("check", "--stacktrace", "-x", "test")
+
+        assertThat(result.task(":archRulesConsoleReport"))
+            .`as`("archRules console report runs by default")
+            .hasOutcome(TaskOutcome.SUCCESS)
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+
+        assertThat(result.output)
+            .contains("com.netflix.nebula.archrules.deprecation.DeprecationRule")
+            .doesNotContain("deprecated  LOW")
+    }
+
     fun readDetails(dataFile: File): List<RuleResult> {
         val list: MutableList<RuleResult> = mutableListOf()
         try {

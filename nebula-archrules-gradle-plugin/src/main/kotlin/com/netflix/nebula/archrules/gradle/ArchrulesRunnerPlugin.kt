@@ -30,6 +30,7 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
         project.plugins.withId("java") {
             val archRulesExt = project.extensions.create<ArchrulesExtension>("archRules")
             archRulesExt.consoleReportEnabled.convention(true)
+            archRulesExt.skipPassingSummaries.convention(false)
             project.extensions.getByType<JavaPluginExtension>().sourceSets
                 .configureEach {
                     project.configureCheckTaskForSourceSet(this)
@@ -47,6 +48,7 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                 getDataFiles().set(
                     project.provider { (project.tasks.withType<CheckRulesTask>().flatMap { it.outputs.files }) }
                 )
+                summaryForPassingDisabled.set(archRulesExt.skipPassingSummaries)
                 dependsOn(checkTasks)
                 onlyIf { archRulesExt.consoleReportEnabled.get() }
             }
