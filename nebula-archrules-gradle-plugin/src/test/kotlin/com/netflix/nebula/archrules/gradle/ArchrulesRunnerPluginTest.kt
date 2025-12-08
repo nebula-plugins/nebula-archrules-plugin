@@ -380,6 +380,111 @@ archRules {
             .doesNotContain("deprecated  LOW")
     }
 
+    @Test
+    fun `plugin skips archrules library test sourceset by default`() {
+        val runner = testProject(projectDir) {
+            properties {
+                gradleCache(true)
+            }
+            settings {
+                name("consumer")
+            }
+            rootProject {
+                plugins {
+                    id("java")
+                    id("com.netflix.nebula.archrules.runner")
+                    id("com.netflix.nebula.archrules.library")
+                }
+                repositories {
+                    mavenCentral()
+                }
+                dependencies(
+                    """archRules("com.netflix.nebula:archrules-deprecation:0.+")"""
+                )
+                src {
+                    main {
+                        exampleLibraryClass()
+                        exampleDeprecatedUsage()
+                    }
+                    test {
+                        exampleDeprecatedUsage("FailingCodeTest")
+                    }
+                }
+            }
+        }
+
+        val result = runner.run("check", "--stacktrace", "-x", "test")
+
+        assertThat(result.task(":checkArchRulesMain"))
+            .`as`("archRules run for main source set")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        assertThat(result.task(":checkArchRulesTest"))
+            .`as`("archRules run for test source set")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        assertThat(result.task(":checkArchRulesArchRulesTest"))
+            .`as`("archRules run for test source set")
+            .hasOutcome(TaskOutcome.SKIPPED)
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+    }
+
+    @Test
+    fun `plugin can skip configured source sets`() {
+        val runner = testProject(projectDir) {
+            properties {
+                gradleCache(true)
+            }
+            settings {
+                name("consumer")
+            }
+            rootProject {
+                plugins {
+                    id("java")
+                    id("com.netflix.nebula.archrules.runner")
+                }
+                repositories {
+                    mavenCentral()
+                }
+                dependencies(
+                    """archRules("com.netflix.nebula:archrules-deprecation:0.+")"""
+                )
+                src {
+                    main {
+                        exampleLibraryClass()
+                        exampleDeprecatedUsage()
+                    }
+                    test {
+                        exampleDeprecatedUsage("FailingCodeTest")
+                    }
+                }
+                rawBuildScript("""
+archRules {
+    skipSourceSet("test")
+}      
+"""
+                )
+            }
+        }
+
+        val result = runner.run("check", "--stacktrace", "-x", "test")
+
+        assertThat(result.task(":checkArchRulesMain"))
+            .`as`("archRules run for main source set")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        assertThat(result.task(":checkArchRulesTest"))
+            .`as`("archRules run for test source set")
+            .hasOutcome(TaskOutcome.SKIPPED)
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+    }
+
     fun readDetails(dataFile: File): List<RuleResult> {
         val list: MutableList<RuleResult> = mutableListOf()
         try {

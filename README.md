@@ -154,6 +154,14 @@ archRules {
 }
 ```
 
+You can skip running rules on a specific source set:
+```kotlin
+archRules {
+    skipSourceSet("test")
+}
+```
+The `archRulesTest` source set is skipped by default.
+
 ## How it works
 
 The Archrules Library plugin produces a separate Jar for the `archRules` sourceset, which is exposed as an alternate variant of the library. It also will automatically generate a `META-INF/services` file which contains a reference for each implementation of `com.netflix.nebula.archrules.core.ArchRulesService` to declare it as a service provider.
