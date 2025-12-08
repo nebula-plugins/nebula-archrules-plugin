@@ -37,6 +37,7 @@ abstract public class PrintConsoleReportTask extends DefaultTask {
     public void printReport() {
         final var consoleOutput = getServices().get(StyledTextOutputFactory.class).create("archrules");
         List<RuleResult> list = getDataFiles().get().stream()
+                .filter(File::exists)
                 .flatMap(it -> ViolationsUtil.readDetails(it).stream())
                 .toList();
         final var byRule = ViolationsUtil.consolidatedFailures(list);

@@ -37,6 +37,7 @@ abstract public class PrintJsonReportTask extends DefaultTask {
     @TaskAction
     public void printReport() {
         List<RuleResult> list = getDataFiles().get().stream()
+                .filter(File::exists)
                 .flatMap(it -> ViolationsUtil.readDetails(it).stream())
                 .toList();
 
