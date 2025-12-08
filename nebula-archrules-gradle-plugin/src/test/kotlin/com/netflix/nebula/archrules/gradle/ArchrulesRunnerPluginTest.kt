@@ -120,7 +120,7 @@ class ArchrulesRunnerPluginTest {
             .exists()
 
         assertThat(result.output)
-            .contains("ArchRule summary:")
+            .contains("com.netflix.nebula.archrules.deprecation.DeprecationRule")
             .contains("deprecated  LOW        (1 failures)")
     }
 

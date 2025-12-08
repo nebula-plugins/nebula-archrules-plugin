@@ -28,19 +28,16 @@ abstract public class PrintConsoleReportTask extends DefaultTask {
     @TaskAction
     public void printReport() {
         final var consoleOutput = getServices().get(StyledTextOutputFactory.class).create("archrules");
-        consoleOutput.style(StyledTextOutput.Style.Header).println("ArchRule summary:").println();
         List<RuleResult> list = getDataFiles().get().stream()
                 .flatMap(it -> ViolationsUtil.readDetails(it).stream())
                 .toList();
         final var byRule = ViolationsUtil.consolidatedFailures(list);
         ViolationsUtil.printSummary(byRule, consoleOutput);
-        consoleOutput.println();
         if (list.stream().anyMatch(it -> it.status() != RuleResultStatus.FAIL && it.rule().priority() == Priority.LOW) && !getLogger().isInfoEnabled()) {
             consoleOutput.style(StyledTextOutput.Style.Header)
                     .text("Note: ")
                     .style(StyledTextOutput.Style.Normal)
-                    .println("In order to see details of LOW priority rules, run build with --info")
-                    .println();
+                    .println("In order to see details of LOW priority rules, run build with --info");
         }
         ViolationsUtil.printReport(byRule, consoleOutput, getLogger().isInfoEnabled());
     }
