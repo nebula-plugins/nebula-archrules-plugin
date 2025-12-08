@@ -56,27 +56,34 @@ class ViolationsUtil {
 
         @JvmStatic
         fun printSummary(resultMap: Map<Rule, List<RuleResult>>, output: StyledTextOutput) {
+            val indent = 4
             val maxRuleNameLength = resultMap.keys.maxOfOrNull { it.ruleName().length } ?: 1
-            resultMap.forEach { (rule, results) ->
-                val failures = results.filter { it.status() != RuleResultStatus.PASS }
-                if (failures.isEmpty()) {
-                    output.style(StyledTextOutput.Style.Success)
-                        .text(rule.ruleName().padEnd(maxRuleNameLength + 1))
-                        .text(" ")
-                        .text(rule.priority().asString().padEnd(10))
-                        .println(" (No failures)")
-                } else {
-                    val style = when (rule.priority()) {
-                        Priority.LOW -> StyledTextOutput.Style.Normal
-                        Priority.MEDIUM -> StyledTextOutput.Style.Info
-                        Priority.HIGH -> StyledTextOutput.Style.Failure
+            resultMap.entries.groupBy { entry -> entry.key.ruleClass() }
+                .forEach { (ruleClass, classMap) ->
+                    output.style(StyledTextOutput.Style.Header).println(ruleClass)
+                    classMap.forEach { (rule, results) ->
+                        val failures = results.filter { it.status() != RuleResultStatus.PASS }
+                        if (failures.isEmpty()) {
+                            output.style(StyledTextOutput.Style.Success)
+                                .text(" ".repeat(indent))
+                                .text(rule.ruleName().padEnd(maxRuleNameLength + 1))
+                                .text(" ")
+                                .text(rule.priority().asString().padEnd(10))
+                                .println(" (No failures)")
+                        } else {
+                            val style = when (rule.priority()) {
+                                Priority.LOW -> StyledTextOutput.Style.Normal
+                                Priority.MEDIUM -> StyledTextOutput.Style.Info
+                                Priority.HIGH -> StyledTextOutput.Style.Failure
+                            }
+                            output.style(style)
+                                .text(" ".repeat(indent))
+                                .text(rule.ruleName().padEnd(maxRuleNameLength + 1))
+                                .text(" ")
+                                .text(rule.priority().asString().padEnd(10))
+                                .println(" (" + failures.size + " failures)")
+                        }
                     }
-                    output.style(style)
-                        .text(rule.ruleName().padEnd(maxRuleNameLength + 1))
-                        .text(" ")
-                        .text(rule.priority().asString().padEnd(10))
-                        .println(" (" + failures.size + " failures)")
-                }
             }
         }
 
