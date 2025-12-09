@@ -3,9 +3,6 @@ plugins {
     `kotlin-dsl`
 }
 description = "Plugins for authoring and running Nebula ArchRules"
-repositories {
-    mavenCentral()
-}
 dependencies {
     implementation(project(":nebula-archrules-core"))
     implementation("tools.jackson.core:jackson-databind:3.0.2")

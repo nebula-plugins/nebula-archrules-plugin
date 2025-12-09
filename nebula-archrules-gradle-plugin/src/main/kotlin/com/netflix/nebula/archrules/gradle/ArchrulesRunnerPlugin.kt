@@ -64,17 +64,17 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
     fun Project.configureCheckTaskForSourceSet(sourceSet: SourceSet, ext: ArchrulesExtension) {
         val archRulesReportDir = project.layout.buildDirectory.dir("reports/archrules")
         val sourceSetArchRulesRuntime = configurations.resolvable(sourceSet.name + "ArchRulesRuntime") {
-            extendsFrom(configurations.getByName(sourceSet.runtimeClasspathConfigurationName))
+            extendsFrom(
+                project.configurations.getByName("archRules"),
+                configurations.getByName(sourceSet.runtimeClasspathConfigurationName)
+            )
             attributes {
                 attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named<ArchRuleAttribute>(ARCH_RULES))
             }
         }
         tasks.register<CheckRulesTask>("checkArchRules" + sourceSet.name.capitalized()) {
             description = "Checks ArchRules on ${sourceSet.name}"
-            rulesClasspath.setFrom(
-                sourceSetArchRulesRuntime,
-                project.configurations.getByName("archRules")
-            )
+            rulesClasspath.setFrom(sourceSetArchRulesRuntime)
             dataFile.set(archRulesReportDir.map {
                 it.file(sourceSet.name + ".data").asFile
             })
