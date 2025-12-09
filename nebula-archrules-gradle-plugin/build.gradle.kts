@@ -33,8 +33,8 @@ java {
     }
 }
 testing {
-    suites{
-        named<JvmTestSuite>("test"){
+    suites {
+        named<JvmTestSuite>("test") {
             useJUnitJupiter()
             targets.all {
                 testTask.configure {
@@ -46,4 +46,15 @@ testing {
 }
 dependencyLocking {
     lockAllConfigurations()
+}
+configurations.named("testArchRulesRuntime").configure {
+    resolutionStrategy.dependencySubstitution {
+        // workaround for classpath issue
+        all {
+            val requestedProject = requested
+            if (requestedProject is ProjectComponentSelector) {
+                useTarget("com.netflix.nebula" + requestedProject.projectPath + ":0.3.0")
+            }
+        }
+    }
 }
