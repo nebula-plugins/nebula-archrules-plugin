@@ -2,9 +2,6 @@ plugins {
     id("com.netflix.nebula.library")
 }
 description = "Core library for authoring and running Nebula ArchRules"
-repositories {
-    mavenCentral()
-}
 dependencies {
     api("com.tngtech.archunit:archunit:1.4.1")
     testImplementation("org.assertj:assertj-core:3.27.6")
