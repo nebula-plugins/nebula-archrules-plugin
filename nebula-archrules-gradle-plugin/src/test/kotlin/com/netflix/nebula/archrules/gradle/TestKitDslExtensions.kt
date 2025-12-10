@@ -37,6 +37,24 @@ public class LibraryClass {
     )
 }
 
+fun SourceSetBuilder.dontUseAnnotation() {
+    java(
+        "com/example/library/DontUse.java",
+        //language=java
+        """
+package com.example.library;
+
+import java.lang.annotation.*;
+import static java.lang.annotation.ElementType.*;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(value={CONSTRUCTOR, FIELD, LOCAL_VARIABLE, METHOD, PACKAGE, PARAMETER, TYPE})
+public @interface DontUse {
+}
+"""
+    )
+}
+
 fun SourceSetBuilder.exampleHelperClass() {
     java(
         "com/example/library/HaveNoTests.java",
@@ -91,6 +109,41 @@ public class LibraryArchRules implements ArchRulesService {
     @Override
     public Map<String, ArchRule> getRules() {
         return Map.of("deprecated", noDeprecated);
+    }
+}
+"""
+    )
+}
+
+fun SourceSetBuilder.dontUseRule() {
+    java(
+        "com/example/library/DontUseArchRules.java",
+        //language=java
+        """
+package com.example.library;
+
+import com.netflix.nebula.archrules.core.ArchRulesService;
+import com.tngtech.archunit.lang.ArchRule;
+import com.tngtech.archunit.lang.Priority;
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
+import java.util.Map;
+import static com.tngtech.archunit.core.domain.JavaAccess.Predicates.target;
+import static com.tngtech.archunit.core.domain.JavaAccess.Predicates.targetOwner;
+import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.annotatedWith;
+
+public class DontUseArchRules implements ArchRulesService {
+    public static final ArchRule noDontUse = ArchRuleDefinition.priority(Priority.LOW)
+            .noClasses()
+            .should().accessTargetWhere(targetOwner(annotatedWith("com.example.library.DontUse")))
+            .orShould().accessTargetWhere(target(annotatedWith("com.example.library.DontUse")))
+            .orShould().dependOnClassesThat().areAnnotatedWith("com.example.library.DontUse")
+            .allowEmptyShould(true)
+            .as("No code should reference dontuse APIs")
+            .because("usage of dontuse APIs introduces risk that future upgrades and migrations will be blocked");
+            
+    @Override
+    public Map<String, ArchRule> getRules() {
+        return Map.of("dont use", noDontUse);
     }
 }
 """
@@ -189,6 +242,50 @@ public class LibraryArchRulesTest {
     @Test
     public void test_fail() {
         EvaluationResult result = Runner.check(LibraryArchRules.noDeprecated, FailingCode.class);
+        Assertions.assertTrue(result.hasViolation());
+    }
+}
+"""
+    )
+}
+
+fun SourceSetBuilder.testForDontUseRule() {
+    java(
+        "com/example/library/DontUseArchRulesTest.java",
+        //language=java
+        """
+package com.example.library;
+
+import com.netflix.nebula.archrules.core.ArchRulesService;
+import com.netflix.nebula.archrules.core.Runner;
+import com.tngtech.archunit.lang.EvaluationResult;
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
+
+public class DontUseArchRulesTest {
+    @DontUse
+    static void deprecatedMethod(){
+    }
+    static class PassingCode {
+        public void aMethod() {
+        }
+    }     
+    static class FailingCode {
+        public void aMethod() {
+            deprecatedMethod();
+        }
+    }
+    
+    @Test
+    public void test_pass() {
+        EvaluationResult result = Runner.check(DontUseArchRules.noDontUse, PassingCode.class);
+        Assertions.assertFalse(result.hasViolation());
+    }
+        
+    @Test
+    public void test_fail() {
+        EvaluationResult result = Runner.check(DontUseArchRules.noDontUse, FailingCode.class);
         Assertions.assertTrue(result.hasViolation());
     }
 }

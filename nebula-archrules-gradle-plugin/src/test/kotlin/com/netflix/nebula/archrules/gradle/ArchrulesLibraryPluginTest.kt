@@ -61,6 +61,7 @@ class ArchrulesLibraryPluginTest {
         }
 
         val result = runner.run(
+            "--stacktrace",
             "build",
             "archRulesJar",
             "generateMetadataFileForMavenPublication", // to test publication metadata without actually publishing,
@@ -276,6 +277,56 @@ class ArchrulesLibraryPluginTest {
         assertThat(result.task(":archRulesTest"))
             .`as`("archRules test task runs")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+    }
+
+    @Test
+    fun `main code is included in archRulesTest`() {
+        val runner = testProject(projectDir) {
+            properties {
+                gradleCache(true)
+            }
+            settings {
+                name("library-with-rules")
+            }
+            rootProject {
+                group("com.example")
+                // a library that contains production code and rules to go along with it
+                plugins {
+                    id("java-library")
+                    id("com.netflix.nebula.archrules.library")
+                    id("maven-publish")
+                }
+                repositories {
+                    maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
+                    mavenCentral()
+                }
+                declareMavenPublication()
+                dependencies("""implementation("com.google.guava:guava:33.5.0-jre")""")
+                src {
+                    main {
+                        dontUseAnnotation()
+                    }
+
+                    sourceSet("archRules") {
+                        dontUseRule()
+                    }
+                    sourceSet("archRulesTest") {
+                        testForDontUseRule()
+                    }
+                }
+            }
+        }
+
+        val result = runner.run(
+            "build",
+            "archRulesJar",
+            "generateMetadataFileForMavenPublication", // to test publication metadata without actually publishing,
+            "-Pversion=0.0.1"
+        )
+
         assertThat(result)
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
