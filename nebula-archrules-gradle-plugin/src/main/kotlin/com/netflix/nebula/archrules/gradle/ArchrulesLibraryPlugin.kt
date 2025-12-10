@@ -17,9 +17,16 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.component.internal.JvmSoftwareComponentInternal
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.add
+import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.invoke
+import org.gradle.kotlin.dsl.named
+import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.support.serviceOf
+import org.gradle.kotlin.dsl.withType
 import org.gradle.testing.base.TestingExtension
+import kotlin.collections.mapOf
 
 class ArchrulesLibraryPlugin : Plugin<Project> {
 
@@ -75,6 +82,7 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                     register("archRulesTest", JvmTestSuite::class.java) {
                         useJUnitJupiter()
                         dependencies {
+                            implementation(project())
                             implementation(archRulesSourceSet.output)
                             implementation("com.netflix.nebula:nebula-archrules-core:$version")
                         }
