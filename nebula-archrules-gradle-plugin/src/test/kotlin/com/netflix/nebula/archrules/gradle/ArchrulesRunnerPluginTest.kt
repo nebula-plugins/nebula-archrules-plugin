@@ -48,6 +48,7 @@ class ArchrulesRunnerPluginTest {
         val runner = testProject(projectDir) {
             properties {
                 gradleCache(true)
+                property("org.gradle.configuration-cache", "true")
             }
             settings {
                 name("consumer")
@@ -356,7 +357,8 @@ archRules {
                         exampleDeprecatedUsage("FailingCodeTest")
                     }
                 }
-                rawBuildScript("""
+                rawBuildScript(
+                    """
 archRules {
     skipPassingSummaries = true
 }   
@@ -461,7 +463,8 @@ archRules {
                         exampleDeprecatedUsage("FailingCodeTest")
                     }
                 }
-                rawBuildScript("""
+                rawBuildScript(
+                    """
 archRules {
     skipSourceSet("test")
 }      

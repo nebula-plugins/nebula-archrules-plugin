@@ -53,7 +53,18 @@ configurations.named("testArchRulesRuntime").configure {
         all {
             val requestedProject = requested
             if (requestedProject is ProjectComponentSelector) {
-                useTarget("com.netflix.nebula" + requestedProject.projectPath + ":0.3.0")
+                useTarget("com.netflix.nebula" + requestedProject.projectPath + ":latest.release")
+            }
+        }
+    }
+}
+configurations.named("mainArchRulesRuntime").configure {
+    resolutionStrategy.dependencySubstitution {
+        // workaround for classpath issue
+        all {
+            val requestedProject = requested
+            if (requestedProject is ProjectComponentSelector) {
+                useTarget("com.netflix.nebula" + requestedProject.projectPath + ":latest.release")
             }
         }
     }
