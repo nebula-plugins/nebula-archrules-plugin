@@ -4,6 +4,8 @@ import com.netflix.nebula.archrules.core.ArchRulesService;
 import com.netflix.nebula.archrules.core.Runner;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import org.gradle.workers.WorkAction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -12,14 +14,21 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.stream.Collectors;
 
 import static com.netflix.nebula.archrules.core.NoClassesMatchedEvent.NO_MATCH_MESSAGE;
 
 public abstract class RunRulesWorkAction implements WorkAction<RunRulesParams> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RunRulesWorkAction.class);
 
     @Override
     public void execute() {
         ServiceLoader<ArchRulesService> ruleClasses = ServiceLoader.load(ArchRulesService.class);
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("Rule classes detected: {}", ruleClasses.stream()
+                    .map(it -> it.type().getCanonicalName())
+                    .collect(Collectors.joining(",")));
+        }
         final var classesToCheck = new ClassFileImporter()
                 .importPaths(getParameters().getClassesToCheck().getFiles().stream().map(File::toPath).toList());
         final List<RuleResult> violationList = new ArrayList<>();
