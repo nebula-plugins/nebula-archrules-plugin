@@ -34,7 +34,9 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
             archRulesExt.sourceSetsToSkip.add("archRulesTest")
             project.extensions.getByType<JavaPluginExtension>().sourceSets
                 .configureEach {
-                    project.configureCheckTaskForSourceSet(this, archRulesExt)
+                    if(!archRulesExt.sourceSetsToSkip.get().contains(this.name)) {
+                        project.configureCheckTaskForSourceSet(this)
+                    }
                 }
             val checkTasks = project.tasks.withType<CheckRulesTask>()
             val jsonReportTask = project.tasks.register<PrintJsonReportTask>("archRulesJsonReport") {
@@ -61,7 +63,7 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
         }
     }
 
-    fun Project.configureCheckTaskForSourceSet(sourceSet: SourceSet, ext: ArchrulesExtension) {
+    fun Project.configureCheckTaskForSourceSet(sourceSet: SourceSet) {
         val archRulesReportDir = project.layout.buildDirectory.dir("reports/archrules")
         val sourceSetArchRulesRuntime = configurations.resolvable(sourceSet.name + "ArchRulesRuntime") {
             extendsFrom(
@@ -80,8 +82,6 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
             })
             sourcesToCheck.from(sourceSet.output.classesDirs)
             dependsOn(project.tasks.named(sourceSet.classesTaskName))
-            val sourceSetName = sourceSet.name
-            onlyIf { !ext.sourceSetsToSkip.get().contains(sourceSetName) }
         }
     }
 }

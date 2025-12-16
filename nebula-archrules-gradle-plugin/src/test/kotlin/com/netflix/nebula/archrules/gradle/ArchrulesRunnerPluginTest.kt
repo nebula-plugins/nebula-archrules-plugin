@@ -426,8 +426,8 @@ archRules {
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
         assertThat(result.task(":checkArchRulesArchRulesTest"))
-            .`as`("archRules run for test source set")
-            .hasOutcome(TaskOutcome.SKIPPED)
+            .`as`("archRules don't run for archRulesTest source set")
+            .isNull()
 
         assertThat(result)
             .hasNoMutableStateWarnings()
@@ -480,8 +480,8 @@ archRules {
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
         assertThat(result.task(":checkArchRulesTest"))
-            .`as`("archRules run for test source set")
-            .hasOutcome(TaskOutcome.SKIPPED)
+            .`as`("archRules don't run for test source set")
+            .isNull()
 
         assertThat(result)
             .hasNoMutableStateWarnings()
