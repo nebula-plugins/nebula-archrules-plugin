@@ -38,8 +38,8 @@ abstract public class GenerateServicesRegistryTask extends DefaultTask {
                 .filter(it -> it.getName().endsWith(".class"))
                 .forEach(classFile -> {
                     try {
-                        if(getLogger().isDebugEnabled()) {
-                            getLogger().debug("Generating archive rules for {}", classFile.getName());
+                        if (getLogger().isInfoEnabled()) {
+                            getLogger().info("Generating archive rules for {}", classFile.getName());
                         }
                         ClassReader cr = new ClassReader(Files.newInputStream(classFile.toPath(), StandardOpenOption.READ));
                         cr.accept(visitor, ClassReader.SKIP_DEBUG);
@@ -47,7 +47,9 @@ abstract public class GenerateServicesRegistryTask extends DefaultTask {
                         getLogger().warn("Failed to read class file {}", classFile.getAbsolutePath(), e);
                     }
                 });
-
+        if (getArchRuleServicesFile().get().exists()) {
+            getArchRuleServicesFile().get().delete();
+        }
         getArchRuleServicesFile().get().createNewFile();
         String fileContent = String.join("\n", visitor.getArchRuleServiceClasses());
         Files.writeString(getArchRuleServicesFile().get().toPath(), fileContent, StandardOpenOption.WRITE);
