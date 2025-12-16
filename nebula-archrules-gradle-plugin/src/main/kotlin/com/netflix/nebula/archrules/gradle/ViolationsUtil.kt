@@ -32,6 +32,7 @@ class ViolationsUtil {
 
         @JvmStatic
         fun printReport(violations: Map<Rule, List<RuleResult>>, output: StyledTextOutput, infoLogging: Boolean) {
+            output.style(StyledTextOutput.Style.Header).println("ArchRule Violation Details:")
             violations
                 .mapValues { it.value.filter { it.rule().priority() != Priority.LOW || infoLogging } }
                 .filter { it.value.isNotEmpty() }
@@ -56,6 +57,7 @@ class ViolationsUtil {
 
         @JvmStatic
         fun printSummary(resultMap: Map<Rule, List<RuleResult>>, output: StyledTextOutput, skipPassing: Boolean) {
+            output.style(StyledTextOutput.Style.Header).println("ArchRule Summary:")
             val indent = 4
             val maxRuleNameLength = resultMap.keys.maxOfOrNull { it.ruleName().length } ?: 1
             resultMap.entries.groupBy { entry -> entry.key.ruleClass() }

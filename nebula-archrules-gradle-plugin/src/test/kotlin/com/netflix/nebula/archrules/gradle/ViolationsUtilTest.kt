@@ -33,7 +33,7 @@ internal class ViolationsUtilTest {
     fun `test printSummary empty results`() {
         val output = MockStyledTextOutput()
         ViolationsUtil.printSummary(mapOf(), output, false)
-        assertThat(output.getOutput()).isEmpty()
+        assertThat(output.getOutput()).isEqualTo("ArchRule Summary:\n")
     }
 }
 
