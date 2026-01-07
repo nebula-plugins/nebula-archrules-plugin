@@ -47,7 +47,7 @@ class ArchrulesRunnerPluginTest {
     fun `plugin checks each sourceset`(gradleVersion: SupportedGradleVersion) {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
                 property("org.gradle.configuration-cache", "true")
             }
             settings {
@@ -97,6 +97,9 @@ class ArchrulesRunnerPluginTest {
             .`as`("archRules console report runs by default")
             .hasOutcome(TaskOutcome.SUCCESS)
 
+        assertThat(result.task(":enforceArchRules"))
+            .hasOutcome(TaskOutcome.SKIPPED)
+
         assertThat(result)
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
@@ -129,7 +132,7 @@ class ArchrulesRunnerPluginTest {
     fun `plugin checks each sourceset from its runtime`() {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("consumer")
@@ -191,7 +194,7 @@ class ArchrulesRunnerPluginTest {
     fun `console report can be disabled`(gradleVersion: SupportedGradleVersion) {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("consumer")
@@ -249,7 +252,7 @@ archRules {
     fun `plugin checks additional sourcesets`(gradleVersion: SupportedGradleVersion) {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("consumer")
@@ -287,7 +290,7 @@ archRules {
     fun `passing summaries print by default`() {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("consumer")
@@ -333,7 +336,7 @@ archRules {
     fun `passing summaries can be disabled`() {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("consumer")
@@ -386,7 +389,7 @@ archRules {
     fun `plugin skips archrules library test sourceset by default`() {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("consumer")
@@ -438,7 +441,7 @@ archRules {
     fun `plugin can skip configured source sets`() {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("consumer")

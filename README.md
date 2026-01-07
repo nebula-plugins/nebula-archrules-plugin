@@ -140,6 +140,8 @@ dependencies {
 }
 ```
 
+#### Report Configuration 
+
 The plugin can generate JSON and console reports. Both are enabled by default. The console report can be disabled:
 ```kotlin
 archRules {
@@ -154,6 +156,8 @@ archRules {
 }
 ```
 
+#### Configuring which code is tested
+
 You can skip running rules on a specific source set:
 ```kotlin
 archRules {
@@ -161,6 +165,16 @@ archRules {
 }
 ```
 The `archRulesTest` source set is skipped by default.
+
+#### Configuring Build Failures
+
+You can define which rules should cause a build to fail be setting a failure threshold:
+```kotlin
+archRules {
+    failureThreshold("HIGH")
+}
+```
+Any rules which fail with that priority or higher will cause the build to fail. By default, the build will not fail on any priority.
 
 ## How it works
 
