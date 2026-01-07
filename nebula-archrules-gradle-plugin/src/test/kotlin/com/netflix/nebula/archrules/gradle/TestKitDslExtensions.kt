@@ -115,6 +115,41 @@ public class LibraryArchRules implements ArchRulesService {
     )
 }
 
+fun SourceSetBuilder.exampleDeprecatedHighArchRule() {
+    java(
+        "com/example/library/LibraryArchRules.java",
+        //language=java
+        """
+package com.example.library;
+
+import com.netflix.nebula.archrules.core.ArchRulesService;
+import com.tngtech.archunit.lang.ArchRule;
+import com.tngtech.archunit.lang.Priority;
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
+import java.util.Map;
+import static com.tngtech.archunit.core.domain.JavaAccess.Predicates.target;
+import static com.tngtech.archunit.core.domain.JavaAccess.Predicates.targetOwner;
+import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.annotatedWith;
+
+public class LibraryArchRules implements ArchRulesService {
+    public static final ArchRule noDeprecated = ArchRuleDefinition.priority(Priority.HIGH)
+            .noClasses()
+            .should().accessTargetWhere(targetOwner(annotatedWith(Deprecated.class)))
+            .orShould().accessTargetWhere(target(annotatedWith(Deprecated.class)))
+            .orShould().dependOnClassesThat().areAnnotatedWith(Deprecated.class)
+            .allowEmptyShould(true)
+            .as("No code should reference deprecated APIs")
+            .because("usage of deprecated APIs introduces risk that future upgrades and migrations will be blocked");
+            
+    @Override
+    public Map<String, ArchRule> getRules() {
+        return Map.of("deprecated", noDeprecated);
+    }
+}
+"""
+    )
+}
+
 fun SourceSetBuilder.dontUseRule() {
     java(
         "com/example/library/DontUseArchRules.java",

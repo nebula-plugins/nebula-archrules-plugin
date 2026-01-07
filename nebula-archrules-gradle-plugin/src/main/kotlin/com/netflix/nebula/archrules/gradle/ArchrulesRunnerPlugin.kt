@@ -54,8 +54,18 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                 onlyIf { archRulesExt.consoleReportEnabled.get() }
             }
 
+            val enforceTask = project.tasks.register<EnforceArchRulesTask>("enforceArchRules"){
+                dependsOn(checkTasks)
+                dataFiles.set(
+                    project.provider { (project.tasks.withType<CheckRulesTask>().flatMap { it.outputs.files }) }
+                )
+                failureThreshold.set(archRulesExt.failureThreshold)
+                onlyIf { failureThreshold.isPresent }
+            }
+
             project.tasks.named("check") {
                 dependsOn(checkTasks)
+                dependsOn(enforceTask)
                 finalizedBy(jsonReportTask, consoleReportTask)
             }
         }

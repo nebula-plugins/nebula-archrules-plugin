@@ -3,6 +3,7 @@ package com.netflix.nebula.archrules.gradle
 import nebula.test.dsl.*
 import nebula.test.dsl.TestKitAssertions.assertThat
 import org.gradle.testkit.runner.TaskOutcome
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
@@ -17,7 +18,7 @@ internal class IntegrationTest {
     fun test(gradleVersion: SupportedGradleVersion) {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             subProject("library-with-rules") {
                 // a library that contains production code and rules to go along with it
@@ -38,25 +39,7 @@ internal class IntegrationTest {
                     }
                 }
             }
-            subProject("code-to-check") {
-                // a project which consumes libraries which should have the rules evaluated against it
-                plugins {
-                    id("java")
-                    id("com.netflix.nebula.archrules.runner")
-                }
-                repositories {
-                    maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
-                    mavenCentral()
-                }
-                dependencies(
-                    """implementation(project(":library-with-rules"))"""
-                )
-                src {
-                    main {
-                        exampleDeprecatedUsage()
-                    }
-                }
-            }
+            projectWithCodeUsingDeprecatedCode()
         }
 
         val result = runner.run("check", "--stacktrace") {
@@ -77,6 +60,10 @@ internal class IntegrationTest {
 
         assertThat(result.task(":code-to-check:check"))
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE)
+
+        assertThat(result.task(":code-to-check:enforceArchRules"))
+            .hasOutcome(TaskOutcome.SKIPPED)
+
         assertThat(result)
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
@@ -92,7 +79,7 @@ internal class IntegrationTest {
     fun `test variant resolution`(gradleVersion: SupportedGradleVersion) {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             subProject("library-with-rules") {
                 // a library that contains production code and rules to go along with it
@@ -114,24 +101,7 @@ internal class IntegrationTest {
                     }
                 }
             }
-            subProject("code-to-check") {
-                // a project which consumes libraries which should have the rules evaluated against it
-                plugins {
-                    id("java")
-                    id("com.netflix.nebula.archrules.runner")
-                }
-                repositories {
-                    mavenCentral()
-                }
-                dependencies(
-                    """implementation(project(":library-with-rules"))"""
-                )
-                src {
-                    main {
-                        exampleDeprecatedUsage()
-                    }
-                }
-            }
+            projectWithCodeUsingDeprecatedCode()
         }
 
         val result = runner.run("check", "--stacktrace") {
@@ -168,7 +138,7 @@ internal class IntegrationTest {
     fun `test normal projects can consume libraries with rules`(gradleVersion: SupportedGradleVersion) {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             subProject("library-with-rules") {
                 // a library that contains production code and rules to go along with it
@@ -189,23 +159,7 @@ internal class IntegrationTest {
                     }
                 }
             }
-            subProject("code-to-check") {
-                // a project which consumes libraries which should have the rules evaluated against it
-                plugins {
-                    id("java")
-                }
-                repositories {
-                    mavenCentral()
-                }
-                dependencies(
-                    """implementation(project(":library-with-rules"))"""
-                )
-                src {
-                    main {
-                        exampleDeprecatedUsage()
-                    }
-                }
-            }
+            projectWithCodeUsingDeprecatedCode()
         }
 
         val result = runner.run("check", "--stacktrace") {
@@ -221,5 +175,77 @@ internal class IntegrationTest {
         assertThat(result)
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
+    }
+
+    @Test
+    fun `test fail mode`() {
+        val runner = testProject(projectDir) {
+            properties {
+                buildCache(true)
+            }
+            subProject("library-with-rules") {
+                // a library that contains production code and rules to go along with it
+                plugins {
+                    id("java-library")
+                    id("com.netflix.nebula.archrules.library")
+                }
+                repositories {
+                    mavenCentral()
+                }
+                src {
+                    main {
+                        exampleLibraryClass()
+                    }
+                    sourceSet("archRules") {
+                        exampleDeprecatedHighArchRule()
+                    }
+                }
+            }
+            projectWithCodeUsingDeprecatedCode(
+                """
+archRules {
+    failureThreshold("HIGH")
+}
+"""
+            )
+        }
+
+        val result = runner.runAndFail("check", "--stacktrace") {
+            forwardOutput()
+        }
+        assertThat(result.task(":code-to-check:enforceArchRules"))
+            .hasOutcome(TaskOutcome.FAILED)
+
+        assertThat(result.output).contains("ArchRules failed: deprecated (HIGH)")
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+    }
+
+    /**
+     * creates a subproject which consumes libraries which should have the rules evaluated against it
+     */
+    fun TestProjectBuilder.projectWithCodeUsingDeprecatedCode(additionalScript: String? = null) {
+        subProject("code-to-check") {
+            plugins {
+                id("java")
+                id("com.netflix.nebula.archrules.runner")
+            }
+            repositories {
+                mavenCentral()
+            }
+            dependencies(
+                """implementation(project(":library-with-rules"))"""
+            )
+            src {
+                main {
+                    exampleDeprecatedUsage()
+                }
+            }
+            additionalScript?.let {
+                rawBuildScript(it)
+            }
+        }
     }
 }
