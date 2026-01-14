@@ -31,10 +31,13 @@ class ViolationsUtil {
         }
 
         @JvmStatic
-        fun printReport(violations: Map<Rule, List<RuleResult>>, output: StyledTextOutput, infoLogging: Boolean) {
+        fun printReport(violations: Map<Rule, List<RuleResult>>,
+                        output: StyledTextOutput,
+                        priorityThreshold: Priority?,
+                        infoLogging: Boolean) {
             output.style(StyledTextOutput.Style.Header).println("ArchRule Violation Details:")
             violations
-                .mapValues { it.value.filter { it.rule().priority() != Priority.LOW || infoLogging } }
+                .mapValues { it.value.filter { it.rule().priority().meetsThreshold(priorityThreshold) || infoLogging } }
                 .filter { it.value.isNotEmpty() }
                 .forEach { (rule, ruleViolations) ->
                     val style = when (rule.priority()) {

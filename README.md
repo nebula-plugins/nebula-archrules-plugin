@@ -156,6 +156,14 @@ archRules {
 }
 ```
 
+You can set the threshold for filtering details in the console report. For example, to only see details for HIGH priority failures:
+```kotlin
+archRules {
+    consoleDetailsThreshold("HIGH")
+}
+```
+The default threshold is MEDIUM.
+
 #### Configuring which code is tested
 
 You can skip running rules on a specific source set:

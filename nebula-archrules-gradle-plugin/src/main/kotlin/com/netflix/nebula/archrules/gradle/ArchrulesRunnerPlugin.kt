@@ -1,6 +1,7 @@
 package com.netflix.nebula.archrules.gradle
 
 import com.netflix.nebula.archrules.gradle.ArchRuleAttribute.ARCH_RULES
+import com.tngtech.archunit.lang.Priority
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.attributes.Bundling
@@ -32,6 +33,7 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
             archRulesExt.consoleReportEnabled.convention(true)
             archRulesExt.skipPassingSummaries.convention(false)
             archRulesExt.sourceSetsToSkip.add("archRulesTest")
+            archRulesExt.consoleDetailsThreshold.convention(Priority.MEDIUM)
             project.extensions.getByType<JavaPluginExtension>().sourceSets
                 .configureEach {
                     project.configureCheckTaskForSourceSet(this, archRulesExt)
@@ -46,10 +48,11 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
             }
 
             val consoleReportTask = project.tasks.register<PrintConsoleReportTask>("archRulesConsoleReport") {
-                getDataFiles().set(
+                dataFiles.set(
                     project.provider { (project.tasks.withType<CheckRulesTask>().flatMap { it.outputs.files }) }
                 )
                 summaryForPassingDisabled.set(archRulesExt.skipPassingSummaries)
+                detailsThreshold.set(archRulesExt.consoleDetailsThreshold)
                 dependsOn(checkTasks)
                 onlyIf { archRulesExt.consoleReportEnabled.get() }
             }
