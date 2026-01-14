@@ -17,6 +17,7 @@ abstract class ArchrulesExtension {
     abstract val sourceSetsToSkip: ListProperty<String>
 
     abstract val failureThreshold: Property<Priority>
+    abstract val consoleDetailsThreshold: Property<Priority>
 
     /**
      * Add a source set to the list of sourcesets to skip
@@ -31,5 +32,13 @@ abstract class ArchrulesExtension {
 
     fun failureThreshold(priority: String) {
         failureThreshold.set(Priority.valueOf(priority))
+    }
+
+    fun consoleDetailsThreshold(priority: Priority) {
+        consoleDetailsThreshold.set(priority)
+    }
+
+    fun consoleDetailsThreshold(priority: String) {
+        consoleDetailsThreshold.set(Priority.valueOf(priority))
     }
 }

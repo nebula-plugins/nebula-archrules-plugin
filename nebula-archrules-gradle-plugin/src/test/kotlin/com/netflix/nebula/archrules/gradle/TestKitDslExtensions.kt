@@ -32,6 +32,10 @@ public class LibraryClass {
     @Deprecated
     public static void deprecatedApi() {
     }
+    
+    @Deprecated(forRemoval = true)
+    public static void deprecatedForRemovalApi() {
+    }
 }
 """
     )
@@ -234,6 +238,9 @@ import com.example.library.LibraryClass;
 class $className {
     public void aMethod() {
         LibraryClass.deprecatedApi();
+    }
+    public void forRemovalMethod() {
+        LibraryClass.deprecatedForRemovalApi();
     }
 }
 """
