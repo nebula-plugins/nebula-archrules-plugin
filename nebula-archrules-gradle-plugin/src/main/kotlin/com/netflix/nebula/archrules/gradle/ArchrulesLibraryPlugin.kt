@@ -4,6 +4,7 @@ import com.netflix.nebula.archrules.gradle.ArchRuleAttribute.ARCH_RULES
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition
+import org.gradle.api.attributes.Usage
 import org.gradle.api.component.AdhocComponentWithVariants
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact
 import org.gradle.api.internal.project.ProjectInternal
@@ -17,22 +18,22 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.component.internal.JvmSoftwareComponentInternal
-import org.gradle.kotlin.dsl.add
-import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.getByType
-import org.gradle.kotlin.dsl.invoke
-import org.gradle.kotlin.dsl.named
-import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.*
 import org.gradle.kotlin.dsl.support.serviceOf
-import org.gradle.kotlin.dsl.withType
 import org.gradle.testing.base.TestingExtension
-import kotlin.collections.mapOf
 
 class ArchrulesLibraryPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
         val version = determineVersion()
         project.pluginManager.withPlugin("java") {
+            project.dependencies {
+                attributesSchema {
+                    attribute(Usage.USAGE_ATTRIBUTE){
+                        compatibilityRules.add(ArchRuleCompatibilityRule::class)
+                    }
+                }
+            }
             val javaExt = project.extensions.getByType<JavaPluginExtension>()
             val archRulesSourceSet = javaExt.sourceSets.create("archRules")
             project.configurations.named(archRulesSourceSet.implementationConfigurationName).configure {
@@ -41,11 +42,13 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
             project.configurations.named(archRulesSourceSet.runtimeClasspathConfigurationName).configure {
                 attributes {
                     attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                    attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
                 }
             }
             project.configurations.named(archRulesSourceSet.compileClasspathConfigurationName).configure {
                 attributes {
                     attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                    attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
                 }
             }
             project.dependencies.add(
@@ -102,12 +105,14 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                                 extendsFrom(project.configurations.getByName(archRulesSourceSet.runtimeClasspathConfigurationName))
                                 attributes {
                                     attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                                    attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
                                 }
                             }
                             project.configurations.named(compileClasspathConfigurationName).configure {
                                 extendsFrom(project.configurations.getByName(archRulesSourceSet.compileClasspathConfigurationName))
                                 attributes {
                                     attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                                    attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
                                 }
                             }
                         }
@@ -145,9 +150,10 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                     project.configurations.getByName(sourceSet.implementationConfigurationName),
                     project.configurations.getByName(sourceSet.runtimeOnlyConfigurationName)
                 )
-                outgoing.artifacts.add(jarArtifact);
+                outgoing.artifacts.add(jarArtifact)
                 attributes {
                     attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                    attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
                     attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, ArtifactTypeDefinition.JAR_TYPE)
                 }
             }

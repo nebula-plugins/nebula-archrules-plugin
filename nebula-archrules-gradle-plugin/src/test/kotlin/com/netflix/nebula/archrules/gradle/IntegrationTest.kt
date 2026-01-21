@@ -3,6 +3,7 @@ package com.netflix.nebula.archrules.gradle
 import nebula.test.dsl.*
 import nebula.test.dsl.TestKitAssertions.assertThat
 import org.gradle.testkit.runner.TaskOutcome
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
@@ -20,25 +21,7 @@ internal class IntegrationTest {
             properties {
                 buildCache(true)
             }
-            subProject("library-with-rules") {
-                // a library that contains production code and rules to go along with it
-                plugins {
-                    id("java-library")
-                    id("com.netflix.nebula.archrules.library")
-                }
-                repositories {
-                    maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
-                    mavenCentral()
-                }
-                src {
-                    main {
-                        exampleLibraryClass()
-                    }
-                    sourceSet("archRules") {
-                        exampleDeprecatedArchRule()
-                    }
-                }
-            }
+            projectWithRules()
             projectWithCodeUsingDeprecatedCode()
         }
 
@@ -81,24 +64,9 @@ internal class IntegrationTest {
             properties {
                 buildCache(true)
             }
-            subProject("library-with-rules") {
-                // a library that contains production code and rules to go along with it
+            projectWithRules {
                 plugins {
-                    id("java-library")
-                    id("com.netflix.nebula.archrules.library")
                     kotlin("jvm") version ("2.2.20")
-                }
-                repositories {
-                    maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
-                    mavenCentral()
-                }
-                src {
-                    main {
-                        exampleLibraryClass()
-                    }
-                    sourceSet("archRules") {
-                        exampleDeprecatedArchRule()
-                    }
                 }
             }
             projectWithCodeUsingDeprecatedCode()
@@ -132,7 +100,6 @@ internal class IntegrationTest {
         assertThat(reportsDir.resolve("main.data")).exists().isNotEmpty
     }
 
-
     @ParameterizedTest
     @EnumSource(SupportedGradleVersion::class)
     fun `test normal projects can consume libraries with rules`(gradleVersion: SupportedGradleVersion) {
@@ -140,26 +107,23 @@ internal class IntegrationTest {
             properties {
                 buildCache(true)
             }
-            subProject("library-with-rules") {
-                // a library that contains production code and rules to go along with it
+            projectWithRules()
+            subProject("code-to-check") {
                 plugins {
-                    id("java-library")
-                    id("com.netflix.nebula.archrules.library")
-                    kotlin("jvm") version ("2.2.20")
+                    id("java")
                 }
                 repositories {
                     mavenCentral()
                 }
+                dependencies(
+                    """implementation(project(":library-with-rules"))"""
+                )
                 src {
                     main {
-                        exampleLibraryClass()
-                    }
-                    sourceSet("archRules") {
-                        exampleDeprecatedArchRule()
+                        exampleDeprecatedUsage()
                     }
                 }
             }
-            projectWithCodeUsingDeprecatedCode()
         }
 
         val result = runner.run("check", "--stacktrace") {
@@ -183,31 +147,16 @@ internal class IntegrationTest {
             properties {
                 buildCache(true)
             }
-            subProject("library-with-rules") {
-                // a library that contains production code and rules to go along with it
-                plugins {
-                    id("java-library")
-                    id("com.netflix.nebula.archrules.library")
-                }
-                repositories {
-                    mavenCentral()
-                }
-                src {
-                    main {
-                        exampleLibraryClass()
-                    }
-                    sourceSet("archRules") {
-                        exampleDeprecatedHighArchRule()
-                    }
-                }
-            }
-            projectWithCodeUsingDeprecatedCode(
-                """
+            projectWithHighRules()
+            projectWithCodeUsingDeprecatedCode {
+                rawBuildScript(
+                    """
 archRules {
     failureThreshold("HIGH")
 }
 """
-            )
+                )
+            }
         }
 
         val result = runner.runAndFail("check", "--stacktrace") {
@@ -224,9 +173,38 @@ archRules {
     }
 
     /**
+     * once artifacts are published with the correct usage attribute, this should pass
+     */
+    @Test
+    @Disabled
+    fun `test proto integration`() {
+        val runner = testProject(projectDir) {
+            properties {
+                buildCache(true)
+            }
+            projectWithRules {
+                plugins {
+                    id("com.google.protobuf").version("0.9.6")
+                }
+            }
+            projectWithCodeUsingDeprecatedCode {
+                plugins {
+                    id("com.google.protobuf").version("0.9.6")
+                }
+            }
+        }
+
+        val result = runner.run("check", "--stacktrace", "-x", "test")
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+    }
+
+    /**
      * creates a subproject which consumes libraries which should have the rules evaluated against it
      */
-    fun TestProjectBuilder.projectWithCodeUsingDeprecatedCode(additionalScript: String? = null) {
+    fun TestProjectBuilder.projectWithCodeUsingDeprecatedCode(additionalConfig: ProjectBuilder.() -> Unit = {}) {
         subProject("code-to-check") {
             plugins {
                 id("java")
@@ -243,9 +221,52 @@ archRules {
                     exampleDeprecatedUsage()
                 }
             }
-            additionalScript?.let {
-                rawBuildScript(it)
+            additionalConfig.invoke(this)
+        }
+    }
+
+    fun TestProjectBuilder.emptyRuleProject(additionalConfig: ProjectBuilder.() -> Unit = {}) {
+        subProject("library-with-rules") {
+            // a library that contains production code and rules to go along with it
+            plugins {
+                id("java-library")
+                id("com.netflix.nebula.archrules.library")
             }
+            repositories {
+                maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
+                mavenCentral()
+            }
+            src {
+                main {
+                    exampleLibraryClass()
+                }
+                sourceSet("archRules") {
+
+                }
+            }
+            additionalConfig.invoke(this)
+        }
+    }
+
+    fun TestProjectBuilder.projectWithRules(additionalConfig: ProjectBuilder.() -> Unit = {}) {
+        emptyRuleProject {
+            src {
+                sourceSet("archRules") {
+                    exampleDeprecatedArchRule()
+                }
+            }
+            additionalConfig.invoke(this)
+        }
+    }
+
+    fun TestProjectBuilder.projectWithHighRules(additionalConfig: ProjectBuilder.() -> Unit = {}) {
+        emptyRuleProject {
+            src {
+                sourceSet("archRules") {
+                    exampleDeprecatedHighArchRule()
+                }
+            }
+            additionalConfig.invoke(this)
         }
     }
 }
