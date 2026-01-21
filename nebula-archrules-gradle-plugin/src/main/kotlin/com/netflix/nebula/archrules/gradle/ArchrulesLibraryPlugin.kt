@@ -154,7 +154,6 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                 attributes {
                     attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
                     attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
-                    attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, ArtifactTypeDefinition.JAR_TYPE)
                 }
             }
             val adhocComponent = component as AdhocComponentWithVariants
