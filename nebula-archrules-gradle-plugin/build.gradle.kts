@@ -6,6 +6,7 @@ description = "Plugins for authoring and running Nebula ArchRules"
 dependencies {
     implementation(project(":nebula-archrules-core"))
     implementation("tools.jackson.core:jackson-databind:3.0.2")
+
     testImplementation("net.javacrumbs.json-unit:json-unit-assertj:5.0.0")
     testImplementation("org.json:json:20250517")
 }

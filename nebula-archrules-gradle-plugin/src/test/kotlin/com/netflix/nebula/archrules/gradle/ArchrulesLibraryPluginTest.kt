@@ -31,7 +31,7 @@ class ArchrulesLibraryPluginTest {
     fun `plugin produces maven publication`() {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("library-with-rules")
@@ -123,7 +123,7 @@ class ArchrulesLibraryPluginTest {
     fun `main dependencies are included in archRules`() {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("library-with-rules")
@@ -194,7 +194,7 @@ class ArchrulesLibraryPluginTest {
     fun `plugin produces proper outgoingVariants`() {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("library-with-rules")
@@ -228,8 +228,8 @@ class ArchrulesLibraryPluginTest {
             .contains("Variant archRulesRuntimeElements")
             .contains("Variant testResultsElementsForArchRulesTest")
             .doesNotContain("Variant archRulesApiElements")
-            .contains("- com.netflix.nebula.archrules   = arch-rules")
-        val indexOfArchRulesVariant = result.output.indexOf("- com.netflix.nebula.archrules   = arch-rules")
+            .contains("- org.gradle.usage               = arch-rules")
+        val indexOfArchRulesVariant = result.output.indexOf("- org.gradle.usage               = arch-rules")
         assertThat(indexOfArchRulesVariant)
             .`as`("archRulesRuntimeElements has arch-rules variant")
             .isGreaterThan(0)

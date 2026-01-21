@@ -19,16 +19,20 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
             isCanBeConsumed = false
             isCanBeResolved = true
             attributes {
-                attribute(
-                    ArchRuleAttribute.ARCH_RULES_ATTRIBUTE,
-                    project.objects.named<ArchRuleAttribute>(ARCH_RULES)
-                )
-                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named<Usage>(Usage.JAVA_RUNTIME))
+                attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
                 attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named<Category>(Category.LIBRARY))
                 attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling.EXTERNAL))
             }
         }
         project.plugins.withId("java") {
+            project.dependencies {
+                attributesSchema {
+                    attribute(Usage.USAGE_ATTRIBUTE){
+                        compatibilityRules.add(ArchRuleCompatibilityRule::class)
+                    }
+                }
+            }
             val archRulesExt = project.extensions.create<ArchrulesExtension>("archRules")
             archRulesExt.consoleReportEnabled.convention(true)
             archRulesExt.skipPassingSummaries.convention(false)
@@ -57,7 +61,7 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                 onlyIf { archRulesExt.consoleReportEnabled.get() }
             }
 
-            val enforceTask = project.tasks.register<EnforceArchRulesTask>("enforceArchRules"){
+            val enforceTask = project.tasks.register<EnforceArchRulesTask>("enforceArchRules") {
                 dependsOn(checkTasks)
                 dataFiles.set(
                     project.provider { (project.tasks.withType<CheckRulesTask>().flatMap { it.outputs.files }) }
@@ -82,7 +86,8 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                 configurations.getByName(sourceSet.runtimeClasspathConfigurationName)
             )
             attributes {
-                attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named<ArchRuleAttribute>(ARCH_RULES))
+                attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
             }
         }
         tasks.register<CheckRulesTask>("checkArchRules" + sourceSet.name.capitalized()) {
