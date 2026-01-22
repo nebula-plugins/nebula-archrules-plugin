@@ -172,11 +172,7 @@ archRules {
             .hasNoDeprecationWarnings()
     }
 
-    /**
-     * once artifacts are published with the correct usage attribute, this should pass
-     */
     @Test
-    @Disabled
     fun `test proto integration`() {
         val runner = testProject(projectDir) {
             properties {
@@ -186,6 +182,7 @@ archRules {
                 plugins {
                     id("com.google.protobuf").version("0.9.6")
                 }
+                dependencies("""implementation("com.netflix.nebula:archrules-deprecation:latest.release")""")
             }
             projectWithCodeUsingDeprecatedCode {
                 plugins {

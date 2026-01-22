@@ -81,7 +81,7 @@ class TransitiveDependencyTests {
     fun `plugin sets up tests for rules with dependencies`() {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("library-with-rules")
@@ -149,7 +149,7 @@ class TransitiveDependencyTests {
     fun `plugin sets up tests for rules in archRules with helper dependencies`() {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("library-with-rules")
@@ -216,7 +216,7 @@ class TransitiveDependencyTests {
     fun `test transitive rules in classpath`() {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("library-with-rules")
@@ -297,7 +297,7 @@ class TransitiveDependencyTests {
     fun `test transitive rules in archRules`() {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("library-with-rules")
@@ -379,7 +379,7 @@ class TransitiveDependencyTests {
     fun `rules can be authored in main source sets`() {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("library-with-rules")

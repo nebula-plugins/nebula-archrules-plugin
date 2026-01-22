@@ -27,12 +27,8 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val version = determineVersion()
         project.pluginManager.withPlugin("java") {
-            project.dependencies {
-                attributesSchema {
-                    attribute(Usage.USAGE_ATTRIBUTE){
-                        compatibilityRules.add(ArchRuleCompatibilityRule::class)
-                    }
-                }
+            project.dependencies.attributesSchema.attribute(Usage.USAGE_ATTRIBUTE) {
+                compatibilityRules.add(ArchRuleCompatibilityRule::class)
             }
             val javaExt = project.extensions.getByType<JavaPluginExtension>()
             val archRulesSourceSet = javaExt.sourceSets.create("archRules")
