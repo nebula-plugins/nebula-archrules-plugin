@@ -26,13 +26,10 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
             }
         }
         project.plugins.withId("java") {
-            project.dependencies {
-                attributesSchema {
-                    attribute(Usage.USAGE_ATTRIBUTE){
-                        compatibilityRules.add(ArchRuleCompatibilityRule::class)
-                    }
-                }
+            project.dependencies.attributesSchema.attribute(Usage.USAGE_ATTRIBUTE) {
+                compatibilityRules.add(ArchRuleCompatibilityRule::class)
             }
+
             val archRulesExt = project.extensions.create<ArchrulesExtension>("archRules")
             archRulesExt.consoleReportEnabled.convention(true)
             archRulesExt.skipPassingSummaries.convention(false)

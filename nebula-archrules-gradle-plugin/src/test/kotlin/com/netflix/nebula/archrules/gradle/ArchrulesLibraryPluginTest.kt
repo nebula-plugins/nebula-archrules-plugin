@@ -243,7 +243,7 @@ class ArchrulesLibraryPluginTest {
     fun `plugin sets up tests for rules`() {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("library-with-rules")
@@ -286,7 +286,7 @@ class ArchrulesLibraryPluginTest {
     fun `main code is included in archRulesTest`() {
         val runner = testProject(projectDir) {
             properties {
-                gradleCache(true)
+                buildCache(true)
             }
             settings {
                 name("library-with-rules")
