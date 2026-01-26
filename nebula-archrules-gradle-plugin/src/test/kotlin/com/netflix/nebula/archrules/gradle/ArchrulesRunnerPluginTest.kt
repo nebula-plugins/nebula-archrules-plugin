@@ -466,13 +466,15 @@ archRules {
     }
 
     @Test
-    fun `override deprecation priority to low`() {
+    fun `can override priority of a rule`() {
         val runner = testProject(projectDir) {
             setupConsumerProject {
                 rawBuildScript(
                     """
 archRules {
-    overridePriority("com.netflix.nebula.archrules.deprecation", "LOW")
+    rule("com.netflix.nebula.archrules.deprecation") {
+        priority("LOW")
+    }
 }
 """
                 )

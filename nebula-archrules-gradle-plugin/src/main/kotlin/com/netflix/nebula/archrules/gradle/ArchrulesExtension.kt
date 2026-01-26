@@ -1,6 +1,7 @@
 package com.netflix.nebula.archrules.gradle
 
 import com.tngtech.archunit.lang.Priority
+import org.gradle.api.Action
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
@@ -48,11 +49,20 @@ abstract class ArchrulesExtension {
         consoleDetailsThreshold.set(Priority.valueOf(priority))
     }
 
-    fun overridePriority(ruleClass: String, priority: Priority) {
-        priorityOverrides.put(ruleClass, priority)
-    }
+    fun rule(ruleClass: String, action: Action<RuleConfig>) {
+        val config = RuleConfig()
+        action.execute(config)
 
-    fun overridePriority(ruleClass: String, priority: String) {
-        priorityOverrides.put(ruleClass, Priority.valueOf(priority))
+        config.priority?.let { priority ->
+            priorityOverrides.put(ruleClass, priority)
+        }
+    }
+}
+
+class RuleConfig {
+    var priority: Priority? = null
+
+    fun priority(priority: String) {
+        this.priority = Priority.valueOf(priority)
     }
 }
