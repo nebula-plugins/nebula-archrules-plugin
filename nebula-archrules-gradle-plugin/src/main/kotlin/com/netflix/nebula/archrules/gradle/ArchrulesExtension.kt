@@ -2,6 +2,7 @@ package com.netflix.nebula.archrules.gradle
 
 import com.tngtech.archunit.lang.Priority
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 
 abstract class ArchrulesExtension {
@@ -18,6 +19,11 @@ abstract class ArchrulesExtension {
 
     abstract val failureThreshold: Property<Priority>
     abstract val consoleDetailsThreshold: Property<Priority>
+
+    /**
+     * Allow priority overrides
+     */
+    abstract val priorityOverrides: MapProperty<String, Priority>
 
     /**
      * Add a source set to the list of sourcesets to skip
@@ -40,5 +46,13 @@ abstract class ArchrulesExtension {
 
     fun consoleDetailsThreshold(priority: String) {
         consoleDetailsThreshold.set(Priority.valueOf(priority))
+    }
+
+    fun overridePriority(ruleClass: String, priority: Priority) {
+        priorityOverrides.put(ruleClass, priority)
+    }
+
+    fun overridePriority(ruleClass: String, priority: String) {
+        priorityOverrides.put(ruleClass, Priority.valueOf(priority))
     }
 }

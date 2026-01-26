@@ -464,4 +464,36 @@ archRules {
         }
         return list
     }
+
+    @Test
+    fun `override deprecation priority to low`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                rawBuildScript(
+                    """
+archRules {
+    overridePriority("com.netflix.nebula.archrules.deprecation", "LOW")
+}
+"""
+                )
+            }
+        }
+
+        val result = runner.run("checkArchRulesMain", "--stacktrace", "-x", "test")
+
+        assertThat(result.task(":checkArchRulesMain"))
+            .`as`("archRules run for main source set")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        val results = readDetails(mainReport)
+
+        val deprecationResults = results.filter {
+            it.rule.ruleClass.contains("deprecation")
+        }
+        assertThat(deprecationResults).hasSize(3)
+        deprecationResults.forEach { result ->
+            assertThat(result.rule.priority).isEqualTo(Priority.LOW)
+        }
+    }
 }
