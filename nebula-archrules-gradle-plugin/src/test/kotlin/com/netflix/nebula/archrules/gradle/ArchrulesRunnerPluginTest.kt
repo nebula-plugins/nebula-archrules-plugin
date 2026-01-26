@@ -7,7 +7,9 @@ import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.named
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.testkit.runner.TaskOutcome
+import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
@@ -497,5 +499,30 @@ archRules {
         deprecationResults.forEach { result ->
             assertThat(result.rule.priority).isEqualTo(Priority.LOW)
         }
+    }
+
+    @Test
+    fun `invalid priority throws error`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                rawBuildScript(
+                    """
+archRules {
+    rule("com.netflix.nebula.archrules.deprecation") {
+        priority("NONE")
+    }
+}
+"""
+                )
+            }
+        }
+
+        val exception = assertThrows<UnexpectedBuildFailure> {
+            runner.run("checkArchRulesMain", "--stacktrace", "-x", "test")
+        }
+
+        assertThat(exception.message)
+            .contains("Invalid priority 'NONE'")
+            .contains("Must be one of the following (case-sensitive): HIGH, MEDIUM, LOW")
     }
 }

@@ -63,6 +63,18 @@ class RuleConfig {
     var priority: Priority? = null
 
     fun priority(priority: String) {
-        this.priority = Priority.valueOf(priority)
+        try {
+            this.priority = Priority.valueOf(priority)
+        } catch(e: IllegalArgumentException) {
+            val validValues = Priority.entries.joinToString { it.name }
+            throw IllegalArgumentException(
+                "Invalid priority '$priority'. Must be one of the following (case-sensitive): $validValues",
+                e
+            )
+        }
+    }
+
+    fun priority(priority: Priority) {
+        this.priority = priority
     }
 }
