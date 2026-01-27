@@ -298,7 +298,7 @@ archRules {
                     """
 archRules {
     skipPassingSummaries = true
-}   
+}
 """
                 )
                 src {
@@ -341,7 +341,7 @@ archRules {
                     """
 archRules {
     consoleDetailsThreshold("MEDIUM")
-}   
+}
 """
                 )
             }
@@ -370,7 +370,7 @@ archRules {
                     """
 archRules {
     consoleDetailsThreshold("LOW")
-}   
+}
 """
                 )
             }
@@ -427,7 +427,7 @@ archRules {
                     """
 archRules {
     skipSourceSet("test")
-}      
+}
 """
                 )
             }
@@ -517,7 +517,7 @@ archRules {
         val result = runner.run("checkArchRulesMain", "--stacktrace", "-x", "test")
 
         assertThat(result.output)
-            .contains("Invalid priority 'NONE'")
+            .contains("Invalid ArchRule priority 'NONE'")
             .contains("Must be one of the following (case-sensitive): HIGH, MEDIUM, LOW")
 
         assertThat(result.task(":checkArchRulesMain"))
