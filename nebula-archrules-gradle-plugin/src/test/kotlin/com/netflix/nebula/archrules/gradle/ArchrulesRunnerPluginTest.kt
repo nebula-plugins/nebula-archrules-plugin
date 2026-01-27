@@ -159,6 +159,10 @@ class ArchrulesRunnerPluginTest {
         assertThat(jsonReport)
             .`as`("json report created")
             .exists()
+
+        assertThat(result.output)
+            .`as`("filtered details message is printed")
+            .contains("Note: In order to see details of rules with priority less than MEDIUM,")
     }
 
     @Test

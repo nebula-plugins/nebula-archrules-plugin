@@ -54,7 +54,7 @@ abstract class PrintConsoleReportTask : DefaultTask() {
             consoleOutput.style(StyledTextOutput.Style.Header)
                 .text("Note: ")
                 .style(StyledTextOutput.Style.Normal)
-                .println("In order to see details of ${detailsThreshold.orElse(Priority.LOW)} and lower priority rules, run build with --info")
+                .println("In order to see details of rules with priority less than ${detailsThreshold.getOrElse(Priority.LOW)}, run build with --info")
         }
         ViolationsUtil.printReport(byRule, consoleOutput, detailsThreshold.orNull, logger.isInfoEnabled)
     }
