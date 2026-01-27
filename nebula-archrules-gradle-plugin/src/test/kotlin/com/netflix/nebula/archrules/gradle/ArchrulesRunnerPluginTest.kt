@@ -7,9 +7,7 @@ import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.named
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.testkit.runner.TaskOutcome
-import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
@@ -475,7 +473,7 @@ archRules {
                     """
 archRules {
     rule("com.netflix.nebula.archrules.deprecation") {
-        priority("LOW")
+        priority("HIGH")
     }
 }
 """
@@ -492,17 +490,16 @@ archRules {
         val mainReport = projectDir.resolve("build/reports/archrules/main.data")
         val results = readDetails(mainReport)
 
-        val deprecationResults = results.filter {
-            it.rule.ruleClass.contains("deprecation")
-        }
+        // assert both the deprecatedForRemoval (MEDIUM) and deprecated (LOW) are overridden
+        val deprecationResults = results.filter { it.rule.ruleClass.contains("deprecation") }
         assertThat(deprecationResults).hasSize(3)
         deprecationResults.forEach { result ->
-            assertThat(result.rule.priority).isEqualTo(Priority.LOW)
+            assertThat(result.rule.priority).isEqualTo(Priority.HIGH)
         }
     }
 
     @Test
-    fun `invalid priority throws error`() {
+    fun `invalid priority string logs warning and does not override`() {
         val runner = testProject(projectDir) {
             setupConsumerProject {
                 rawBuildScript(
@@ -517,12 +514,22 @@ archRules {
             }
         }
 
-        val exception = assertThrows<UnexpectedBuildFailure> {
-            runner.run("checkArchRulesMain", "--stacktrace", "-x", "test")
-        }
+        val result = runner.run("checkArchRulesMain", "--stacktrace", "-x", "test")
 
-        assertThat(exception.message)
+        assertThat(result.output)
             .contains("Invalid priority 'NONE'")
             .contains("Must be one of the following (case-sensitive): HIGH, MEDIUM, LOW")
+
+        assertThat(result.task(":checkArchRulesMain"))
+            .`as`("archRules run for main source set")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        val results = readDetails(mainReport)
+
+        // assert priority stays default
+        val deprecationResult = results.firstOrNull { it.rule.ruleName.equals("deprecated") }
+        assertThat(deprecationResult).isNotNull
+        assertThat(deprecationResult!!.rule.priority).isEqualTo(Priority.LOW)
     }
 }
