@@ -93,19 +93,19 @@ public class LibraryArchRulesTest {
         public void aMethod() {
             LibraryClass.newApi();
         }
-    }     
+    }
     static class FailingCode {
         public void aMethod() {
             LibraryClass.deprecatedApi();
         }
     }
-    
+
     @Test
     public void test_pass() {
         EvaluationResult result = Runner.check(LibraryArchRules.noDeprecated, PassingCode.class);
         Assertions.assertFalse(result.hasViolation());
     }
-        
+
     @Test
     public void test_fail() {
         EvaluationResult result = Runner.check(LibraryArchRules.noDeprecated, FailingCode.class);
@@ -140,7 +140,7 @@ dependencies {
 }
 ```
 
-#### Report Configuration 
+#### Report Configuration
 
 The plugin can generate JSON and console reports. Both are enabled by default. The console report can be disabled:
 ```kotlin
@@ -163,6 +163,17 @@ archRules {
 }
 ```
 The default threshold is MEDIUM.
+
+#### Overriding rule priority
+
+You can override the default priority of a rule using the `ruleName` and priority as `LOW`, `MEDIUM`, or `HIGH`:
+```kotlin
+archRules {
+    rule("deprecated") {
+        priority("HIGH")
+    }
+}
+```
 
 #### Configuring which code is tested
 
