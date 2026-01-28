@@ -298,7 +298,7 @@ archRules {
                     """
 archRules {
     skipPassingSummaries = true
-}   
+}
 """
                 )
                 src {
@@ -341,7 +341,7 @@ archRules {
                     """
 archRules {
     consoleDetailsThreshold("MEDIUM")
-}   
+}
 """
                 )
             }
@@ -370,7 +370,7 @@ archRules {
                     """
 archRules {
     consoleDetailsThreshold("LOW")
-}   
+}
 """
                 )
             }
@@ -427,7 +427,7 @@ archRules {
                     """
 archRules {
     skipSourceSet("test")
-}      
+}
 """
                 )
             }
@@ -463,5 +463,78 @@ archRules {
             throw RuntimeException(e)
         }
         return list
+    }
+
+    @Test
+    fun `can override priority of a rule`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                rawBuildScript(
+                    """
+archRules {
+    rule("deprecated") {
+        priority("HIGH")
+    }
+}
+"""
+                )
+            }
+        }
+
+        val result = runner.run("checkArchRulesMain", "--stacktrace", "-x", "test")
+
+        assertThat(result.task(":checkArchRulesMain"))
+            .`as`("archRules run for main source set")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        val results = readDetails(mainReport)
+
+        // assert deprecated (LOW) is overridden
+        val deprecatedResults = results.filter { it.rule.ruleName.equals("deprecated") }
+        assertThat(deprecatedResults).hasSize(2)
+        deprecatedResults.forEach { result ->
+            assertThat(result.rule.priority).isEqualTo(Priority.HIGH)
+        }
+
+        // assert deprecatedForRemoval (MEDIUM), which is in the same class but not the same rule, is not overridden
+        val deprecatedForRemovalResult = results.firstOrNull { it.rule.ruleName.equals("deprecatedForRemoval") }
+        assertThat(deprecatedForRemovalResult).isNotNull
+        assertThat(deprecatedForRemovalResult!!.rule.priority).isEqualTo(Priority.MEDIUM)
+    }
+
+    @Test
+    fun `invalid priority string logs warning and does not override`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                rawBuildScript(
+                    """
+archRules {
+    rule("deprecatedForRemoval") {
+        priority("NONE")
+    }
+}
+"""
+                )
+            }
+        }
+
+        val result = runner.run("checkArchRulesMain", "--stacktrace", "-x", "test")
+
+        assertThat(result.output)
+            .contains("Invalid ArchRule priority 'NONE'")
+            .contains("Must be one of the following (case-sensitive): HIGH, MEDIUM, LOW")
+
+        assertThat(result.task(":checkArchRulesMain"))
+            .`as`("archRules run for main source set")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        val results = readDetails(mainReport)
+
+        // assert priority stays default
+        val deprecationResult = results.firstOrNull { it.rule.ruleName.equals("deprecated") }
+        assertThat(deprecationResult).isNotNull
+        assertThat(deprecationResult!!.rule.priority).isEqualTo(Priority.LOW)
     }
 }
