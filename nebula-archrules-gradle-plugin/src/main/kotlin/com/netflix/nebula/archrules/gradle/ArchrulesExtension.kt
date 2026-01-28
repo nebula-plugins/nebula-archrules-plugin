@@ -49,12 +49,12 @@ abstract class ArchrulesExtension {
         consoleDetailsThreshold.set(Priority.valueOf(priority))
     }
 
-    fun rule(ruleClass: String, action: Action<RuleConfig>) {
+    fun rule(ruleName: String, action: Action<RuleConfig>) {
         val config = RuleConfig()
         action.execute(config)
 
         config.priority?.let { priority ->
-            priorityOverrides.put(ruleClass, priority)
+            priorityOverrides.put(ruleName, priority)
         }
     }
 }

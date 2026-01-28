@@ -40,12 +40,8 @@ public abstract class RunRulesWorkAction implements WorkAction<RunRulesParams> {
 
             // check if there is a priority override
             var priority = result.getPriority();
-            String ruleClassName = ruleClass.getClass().getCanonicalName();
-            for (Map.Entry<String, Priority> override : overrides.entrySet()) {
-                if (ruleClassName.startsWith(override.getKey())) {
-                    priority = override.getValue();
-                    break;
-                }
+            if (overrides.containsKey(id)) {
+                priority = overrides.get(id);
             }
 
             final var rule = new Rule(ruleClass.getClass().getCanonicalName(), id, archRule.getDescription(), priority);
