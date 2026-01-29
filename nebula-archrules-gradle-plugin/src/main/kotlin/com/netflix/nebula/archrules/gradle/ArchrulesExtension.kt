@@ -57,4 +57,13 @@ abstract class ArchrulesExtension {
             priorityOverrides.put(ruleName, priority)
         }
     }
+
+    fun ruleClass(ruleClass: String, action: Action<RuleConfig>) {
+        val config = RuleConfig()
+        action.execute(config)
+
+        config.priority?.let { priority ->
+            priorityOverrides.put(ruleClass, priority)
+        }
+    }
 }
