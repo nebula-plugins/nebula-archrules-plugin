@@ -166,14 +166,19 @@ The default threshold is MEDIUM.
 
 #### Overriding rule priority
 
-You can override the default priority of a rule using the `ruleName` and priority as `LOW`, `MEDIUM`, or `HIGH`:
+You can override the default priority of a rule using the `ruleClass` or `ruleName` and `priority` as `LOW`, `MEDIUM`, or `HIGH`:
 ```kotlin
 archRules {
-    rule("deprecated") {
+    ruleClass("com.netflix.nebula.archrules.deprecation") {
         priority("HIGH")
+    }
+    ruleName("deprecated") {
+        priority("LOW")
     }
 }
 ```
+
+The `ruleName` will take precedent over the `ruleClass`.
 
 #### Configuring which code is tested
 

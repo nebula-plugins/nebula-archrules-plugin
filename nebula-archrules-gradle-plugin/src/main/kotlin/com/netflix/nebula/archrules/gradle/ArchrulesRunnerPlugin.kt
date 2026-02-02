@@ -90,7 +90,8 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
         tasks.register<CheckRulesTask>("checkArchRules" + sourceSet.name.capitalized()) {
             description = "Checks ArchRules on ${sourceSet.name}"
             rulesClasspath.setFrom(sourceSetArchRulesRuntime)
-            priorityOverrides.set(ext.priorityOverrides)
+            priorityOverridesByName.set(ext.priorityOverridesByRuleName)
+            priorityOverridesByClass.set(ext.priorityOverridesByRuleClass)
             dataFile.set(archRulesReportDir.map {
                 it.file(sourceSet.name + ".data").asFile
             })

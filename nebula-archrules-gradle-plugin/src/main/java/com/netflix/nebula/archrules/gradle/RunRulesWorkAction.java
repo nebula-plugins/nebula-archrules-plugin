@@ -34,17 +34,28 @@ public abstract class RunRulesWorkAction implements WorkAction<RunRulesParams> {
         final var classesToCheck = new ClassFileImporter()
                 .importPaths(getParameters().getClassesToCheck().getFiles().stream().map(File::toPath).toList());
         final List<RuleResult> violationList = new ArrayList<>();
-        final var overrides = getParameters().getPriorityOverrides().getOrElse(Map.of());
+        final var overridesByName = getParameters().getPriorityOverridesByName().getOrElse(Map.of());
+        final var overridesByClass = getParameters().getPriorityOverridesByClass().getOrElse(Map.of());
+
         ruleClasses.forEach(ruleClass -> ruleClass.getRules().forEach((id, archRule) -> {
             final var result = Runner.check(archRule, classesToCheck);
 
-            // check if there is a priority override
+            // check if there is priority override by class first
             var priority = result.getPriority();
-            if (overrides.containsKey(id)) {
-                priority = overrides.get(id);
+            String ruleClassName = ruleClass.getClass().getCanonicalName();
+            for (Map.Entry<String, Priority> override : overridesByClass.entrySet()) {
+                String overrideRuleName = override.getKey();
+                if (ruleClassName.startsWith(overrideRuleName)) {
+                    priority = override.getValue();
+                    break;
+                }
+            }
+            // then check if there is a priority override by name
+            if (overridesByName.containsKey(id)) {
+                priority = overridesByName.get(id);
             }
 
-            final var rule = new Rule(ruleClass.getClass().getCanonicalName(), id, archRule.getDescription(), priority);
+            final var rule = new Rule(ruleClassName, id, archRule.getDescription(), priority);
             if (result.hasViolation()) {
                 result.getFailureReport().getDetails().forEach(detail -> {
                     if (detail.equals(NO_MATCH_MESSAGE)) {

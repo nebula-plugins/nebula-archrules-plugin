@@ -24,7 +24,8 @@ abstract class ArchrulesExtension {
     /**
      * Allow priority overrides
      */
-    abstract val priorityOverrides: MapProperty<String, Priority>
+    abstract val priorityOverridesByRuleName: MapProperty<String, Priority>
+    abstract val priorityOverridesByRuleClass: MapProperty<String, Priority>
 
     /**
      * Add a source set to the list of sourcesets to skip
@@ -49,12 +50,31 @@ abstract class ArchrulesExtension {
         consoleDetailsThreshold.set(Priority.valueOf(priority))
     }
 
+    @Deprecated("use ruleName instead")
     fun rule(ruleName: String, action: Action<RuleConfig>) {
         val config = RuleConfig()
         action.execute(config)
 
         config.priority?.let { priority ->
-            priorityOverrides.put(ruleName, priority)
+            priorityOverridesByRuleName.put(ruleName, priority)
+        }
+    }
+
+    fun ruleName(ruleName: String, action: Action<RuleConfig>) {
+        val config = RuleConfig()
+        action.execute(config)
+
+        config.priority?.let { priority ->
+            priorityOverridesByRuleName.put(ruleName, priority)
+        }
+    }
+
+    fun ruleClass(ruleClass: String, action: Action<RuleConfig>) {
+        val config = RuleConfig()
+        action.execute(config)
+
+        config.priority?.let { priority ->
+            priorityOverridesByRuleClass.put(ruleClass, priority)
         }
     }
 }
