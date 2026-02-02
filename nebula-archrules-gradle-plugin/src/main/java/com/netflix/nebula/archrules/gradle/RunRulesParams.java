@@ -14,5 +14,7 @@ public interface RunRulesParams extends WorkParameters {
 
     Property<@NonNull File> getDataOutputFile();
 
-    MapProperty<@NonNull String, @NonNull Priority> getPriorityOverrides();
+    MapProperty<@NonNull String, @NonNull Priority> getPriorityOverridesByName();
+
+    MapProperty<@NonNull String, @NonNull Priority> getPriorityOverridesByClass();
 }
