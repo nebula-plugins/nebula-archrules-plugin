@@ -476,7 +476,7 @@ archRules {
         priority("HIGH")
     }
     ruleName("deprecated") {
-        priority("LOW")
+        priority("MEDIUM")
     }
 }
 """
@@ -502,7 +502,7 @@ archRules {
         val deprecatedResults = results.filter { it.rule.ruleName.equals("deprecated") }
         assertThat(deprecatedResults).hasSize(2)
         deprecatedResults.forEach { result ->
-            assertThat(result.rule.priority).isEqualTo(Priority.LOW)
+            assertThat(result.rule.priority).isEqualTo(Priority.MEDIUM)
         }
     }
 

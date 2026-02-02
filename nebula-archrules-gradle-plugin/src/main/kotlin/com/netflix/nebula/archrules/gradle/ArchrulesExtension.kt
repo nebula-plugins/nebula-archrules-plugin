@@ -50,6 +50,16 @@ abstract class ArchrulesExtension {
         consoleDetailsThreshold.set(Priority.valueOf(priority))
     }
 
+    @Deprecated("use ruleName instead")
+    fun rule(ruleName: String, action: Action<RuleConfig>) {
+        val config = RuleConfig()
+        action.execute(config)
+
+        config.priority?.let { priority ->
+            priorityOverridesByRuleName.put(ruleName, priority)
+        }
+    }
+
     fun ruleName(ruleName: String, action: Action<RuleConfig>) {
         val config = RuleConfig()
         action.execute(config)
