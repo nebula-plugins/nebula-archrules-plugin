@@ -12,6 +12,7 @@ class RuleConfig {
     }
 
     var priority: Priority? = null
+    val sourceSetsToSkip: MutableList<String> = mutableListOf()
 
     fun priority(priority: String) {
         val validStrings = EnumSet.allOf(Priority::class.java).map { it.asString() }.toSet()
@@ -20,12 +21,16 @@ class RuleConfig {
         } else {
             LOGGER.warn(
                 "Invalid ArchRule priority '$priority'. " +
-                        "Must be one of the following (case-sensitive): ${validStrings.joinToString(", ")}"
+                    "Must be one of the following (case-sensitive): ${validStrings.joinToString(", ")}"
             )
         }
     }
 
     fun priority(priority: Priority) {
         this.priority = priority
+    }
+
+    fun skipSourceSet(name: String) {
+        sourceSetsToSkip.add(name)
     }
 }

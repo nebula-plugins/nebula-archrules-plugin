@@ -180,6 +180,19 @@ archRules {
 
 The `ruleName` will take precedent over the `ruleClass`.
 
+#### Disabling specific rules
+You can skip evaluating certain rules on specific source sets:
+```kotlin
+archRules {
+    ruleClass("com.netflix.nebula.archrules.deprecation") {
+        skipSourceSet("test")
+    }
+    ruleName("deprecated") {
+        skipSourceSet("test")
+    }
+}
+```
+
 #### Configuring which code is tested
 
 You can skip running rules on a specific source set:
