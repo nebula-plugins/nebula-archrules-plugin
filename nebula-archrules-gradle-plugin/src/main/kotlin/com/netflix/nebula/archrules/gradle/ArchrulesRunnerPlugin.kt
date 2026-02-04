@@ -10,7 +10,12 @@ import org.gradle.api.attributes.Usage
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.SourceSet
 import org.gradle.internal.extensions.stdlib.capitalized
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.add
+import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.named
+import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.withType
 
 class ArchrulesRunnerPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -87,11 +92,34 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                 attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
             }
         }
+
         tasks.register<CheckRulesTask>("checkArchRules" + sourceSet.name.capitalized()) {
             description = "Checks ArchRules on ${sourceSet.name}"
             rulesClasspath.setFrom(sourceSetArchRulesRuntime)
-            priorityOverridesByName.set(ext.priorityOverridesByRuleName)
-            priorityOverridesByClass.set(ext.priorityOverridesByRuleClass)
+            priorityOverridesByName.set(
+                ext.ruleOverrides.map {
+                    it.mapValues { it.value.priority }
+                        .filterValues { it != null }
+                        .mapValues { it.value!! } // could be improved by https://youtrack.jetbrains.com/issue/KT-4734
+                }
+            )
+            priorityOverridesByClass.set(
+                ext.ruleClassOverrides.map {
+                    it.mapValues { it.value.priority }
+                        .filterValues { it != null }
+                        .mapValues { it.value!! } // could be improved by https://youtrack.jetbrains.com/issue/KT-4734
+                }
+            )
+            excludedRules.set(
+                ext.ruleOverrides.map {
+                    it.filter { it.value.sourceSetsToSkip.contains(sourceSet.name) }.map { it.key }
+                }
+            )
+            excludedRuleClasses.set(
+                ext.ruleClassOverrides.map {
+                    it.filter { it.value.sourceSetsToSkip.contains(sourceSet.name) }.map { it.key }
+                }
+            )
             dataFile.set(archRulesReportDir.map {
                 it.file(sourceSet.name + ".data").asFile
             })

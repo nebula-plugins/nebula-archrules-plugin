@@ -21,11 +21,8 @@ abstract class ArchrulesExtension {
     abstract val failureThreshold: Property<Priority>
     abstract val consoleDetailsThreshold: Property<Priority>
 
-    /**
-     * Allow priority overrides
-     */
-    abstract val priorityOverridesByRuleName: MapProperty<String, Priority>
-    abstract val priorityOverridesByRuleClass: MapProperty<String, Priority>
+    abstract val ruleOverrides: MapProperty<String, RuleConfig>
+    abstract val ruleClassOverrides: MapProperty<String, RuleConfig>
 
     /**
      * Add a source set to the list of sourcesets to skip
@@ -52,29 +49,14 @@ abstract class ArchrulesExtension {
 
     @Deprecated("use ruleName instead")
     fun rule(ruleName: String, action: Action<RuleConfig>) {
-        val config = RuleConfig()
-        action.execute(config)
-
-        config.priority?.let { priority ->
-            priorityOverridesByRuleName.put(ruleName, priority)
-        }
+        ruleOverrides.put(ruleName, RuleConfig().apply { action.execute(this) })
     }
 
     fun ruleName(ruleName: String, action: Action<RuleConfig>) {
-        val config = RuleConfig()
-        action.execute(config)
-
-        config.priority?.let { priority ->
-            priorityOverridesByRuleName.put(ruleName, priority)
-        }
+        ruleOverrides.put(ruleName, RuleConfig().apply { action.execute(this) })
     }
 
     fun ruleClass(ruleClass: String, action: Action<RuleConfig>) {
-        val config = RuleConfig()
-        action.execute(config)
-
-        config.priority?.let { priority ->
-            priorityOverridesByRuleClass.put(ruleClass, priority)
-        }
+        ruleClassOverrides.put(ruleClass, RuleConfig().apply { action.execute(this) })
     }
 }

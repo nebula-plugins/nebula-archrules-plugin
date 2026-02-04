@@ -3,6 +3,7 @@ package com.netflix.nebula.archrules.gradle;
 import com.tngtech.archunit.lang.Priority
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
@@ -32,6 +33,12 @@ abstract class CheckRulesTask @Inject constructor(private val workerExecutor: Wo
     @get:Input
     abstract val priorityOverridesByClass: MapProperty<String, Priority>
 
+    @get:Input
+    abstract val excludedRules: ListProperty<String>
+
+    @get:Input
+    abstract val excludedRuleClasses: ListProperty<String>
+
     @TaskAction
     fun checkRules() {
         val workQueue: WorkQueue = workerExecutor.classLoaderIsolation {
@@ -42,6 +49,8 @@ abstract class CheckRulesTask @Inject constructor(private val workerExecutor: Wo
             getDataOutputFile().set(dataFile)
             getPriorityOverridesByName().set(this@CheckRulesTask.priorityOverridesByName)
             getPriorityOverridesByClass().set(this@CheckRulesTask.priorityOverridesByClass)
+            getExcludedRules().set(this@CheckRulesTask.excludedRules)
+            getExcludedRuleClasses().set(this@CheckRulesTask.excludedRuleClasses)
         }
     }
 }

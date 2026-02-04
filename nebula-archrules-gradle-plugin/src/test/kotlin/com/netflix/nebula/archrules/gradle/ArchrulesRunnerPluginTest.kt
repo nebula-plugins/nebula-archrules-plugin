@@ -484,7 +484,7 @@ archRules {
             }
         }
 
-        val result = runner.run("checkArchRulesMain", "--stacktrace", "-x", "test")
+        val result = runner.run("checkArchRulesMain", "--stacktrace")
 
         assertThat(result.task(":checkArchRulesMain"))
             .`as`("archRules run for main source set")
@@ -507,6 +507,66 @@ archRules {
     }
 
     @Test
+    fun `rule level source set excludes`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                rawBuildScript(
+                    """
+archRules {
+    ruleName("deprecated") {
+        skipSourceSet("main")
+    }
+}
+"""
+                )
+            }
+        }
+
+        val result = runner.run("checkArchRulesMain", "--stacktrace", "--info")
+
+        assertThat(result.task(":checkArchRulesMain"))
+            .`as`("archRules run for main source set")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        val results = readDetails(mainReport)
+
+        val deprecatedForRemovalResults = results.filter { it.rule.ruleName.equals("deprecatedForRemoval") }
+        assertThat(deprecatedForRemovalResults).hasSize(1)
+
+        val deprecatedResults = results.filter { it.rule.ruleName.equals("deprecated") }
+        assertThat(deprecatedResults).isEmpty()
+    }
+
+    @Test
+    fun `ruleClass level source set excludes`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                rawBuildScript(
+                    """
+archRules {
+    ruleClass("com.netflix.nebula.archrules.deprecation") {
+        skipSourceSet("main")
+    }
+}
+"""
+                )
+            }
+        }
+
+        val result = runner.run("checkArchRulesMain", "--stacktrace")
+
+        assertThat(result.task(":checkArchRulesMain"))
+            .`as`("archRules run for main source set")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        val results = readDetails(mainReport)
+
+        assertThat(results).isEmpty()
+    }
+
+    @Test
     fun `invalid priority string logs warning and does not override`() {
         val runner = testProject(projectDir) {
             setupConsumerProject {
@@ -522,7 +582,7 @@ archRules {
             }
         }
 
-        val result = runner.run("checkArchRulesMain", "--stacktrace", "-x", "test")
+        val result = runner.run("checkArchRulesMain", "--stacktrace")
 
         assertThat(result.output)
             .contains("Invalid ArchRule priority 'NONE'")

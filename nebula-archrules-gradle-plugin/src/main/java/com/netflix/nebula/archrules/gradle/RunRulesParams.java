@@ -2,19 +2,25 @@ package com.netflix.nebula.archrules.gradle;
 
 import com.tngtech.archunit.lang.Priority;
 import org.gradle.api.file.ConfigurableFileCollection;
+import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.workers.WorkParameters;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 
 import java.io.File;
 
+@NullMarked
 public interface RunRulesParams extends WorkParameters {
     ConfigurableFileCollection getClassesToCheck();
 
-    Property<@NonNull File> getDataOutputFile();
+    Property<File> getDataOutputFile();
 
-    MapProperty<@NonNull String, @NonNull Priority> getPriorityOverridesByName();
+    MapProperty<String, Priority> getPriorityOverridesByName();
 
-    MapProperty<@NonNull String, @NonNull Priority> getPriorityOverridesByClass();
+    MapProperty<String, Priority> getPriorityOverridesByClass();
+
+    ListProperty<String> getExcludedRules();
+
+    ListProperty<String> getExcludedRuleClasses();
 }
