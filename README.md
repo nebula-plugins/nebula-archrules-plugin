@@ -140,30 +140,6 @@ dependencies {
 }
 ```
 
-#### Report Configuration
-
-The plugin can generate JSON and console reports. Both are enabled by default. The console report can be disabled:
-```kotlin
-archRules {
-    consoleReportEnabled = false
-}
-```
-
-You can also disable printing summary lines for passing rules to reduce noise:
-```kotlin
-archRules {
-    skipPassingSummaries = true
-}
-```
-
-You can set the threshold for filtering details in the console report. For example, to only see details for HIGH priority failures:
-```kotlin
-archRules {
-    consoleDetailsThreshold("HIGH")
-}
-```
-The default threshold is MEDIUM.
-
 #### Overriding rule priority
 
 You can override the default priority of a rule using the `ruleClass` or `ruleName` and `priority` as `LOW`, `MEDIUM`, or `HIGH`:
@@ -212,6 +188,45 @@ archRules {
 }
 ```
 Any rules which fail with that priority or higher will cause the build to fail. By default, the build will not fail on any priority.
+
+## Reporting
+
+The plugin can generate JSON and console reports. Both are enabled by default. The console report can be disabled:
+```kotlin
+archRules {
+    consoleReportEnabled = false
+}
+```
+
+You can also disable printing summary lines for passing rules to reduce noise:
+```kotlin
+archRules {
+    skipPassingSummaries = true
+}
+```
+
+You can set the threshold for filtering details in the console report. For example, to only see details for HIGH priority failures:
+```kotlin
+archRules {
+    consoleDetailsThreshold("HIGH")
+}
+```
+The default threshold is MEDIUM.
+
+If you would like the console report to collect all failures across all subprojects, use the Archrules Aggregate Console Report Plugin to your root project:
+```kotlin
+plugins {
+    id("com.netflix.nebula.archrules.aggregate")
+}
+```
+
+The aggregate report can be configured using the `archRulesAggregate` extension:
+```kotlin
+archRulesAggregate {
+    skipPassingSummaries = true
+    consoleDetailsThreshold("HIGH")
+}
+```
 
 ## How it works
 

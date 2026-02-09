@@ -2,6 +2,7 @@ package com.netflix.nebula.archrules.gradle
 
 import com.tngtech.archunit.lang.Priority
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
@@ -22,7 +23,7 @@ abstract class PrintConsoleReportTask : DefaultTask() {
      */
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val dataFiles: ListProperty<File>
+    abstract val dataFiles: ConfigurableFileCollection
 
     /**
      * if summary lines for passing rules should print
@@ -40,7 +41,7 @@ abstract class PrintConsoleReportTask : DefaultTask() {
     @TaskAction
     fun printReport() {
         val consoleOutput = services.get<StyledTextOutputFactory>().create("archrules")
-        val list = dataFiles.get()
+        val list = dataFiles.files
             .filter(File::exists)
             .flatMap { ViolationsUtil.readDetails(it) }
             .toList()

@@ -84,7 +84,7 @@ class ArchrulesRunnerPluginTest {
         project.plugins.apply("java")
         project.plugins.apply(ArchrulesRunnerPlugin::class.java)
         val consoleReport = project.tasks.named<PrintConsoleReportTask>("archRulesConsoleReport")
-        assertThat(consoleReport.get().dataFiles.get())
+        assertThat(consoleReport.get().dataFiles.files)
             .`as`("console report inputs are correct")
             .hasSize(2)
         val jsonReport = project.tasks.named<PrintJsonReportTask>("archRulesJsonReport")
@@ -163,6 +163,26 @@ class ArchrulesRunnerPluginTest {
         assertThat(result.output)
             .`as`("filtered details message is printed")
             .contains("Note: In order to see details of rules with priority less than MEDIUM,")
+    }
+
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `plugin produces outgoing variants for reports`(gradleVersion: SupportedGradleVersion) {
+        val runner = testProject(projectDir) {
+            setupConsumerProject()
+        }
+
+        val result = runner.run("outgoingVariants") {
+            withGradleVersion(gradleVersion.version)
+            forwardOutput()
+        }
+
+        containsInOrder(result.output,
+            "Variant archRulesReportElements",
+            "- org.gradle.category         = verification",
+            "- org.gradle.verificationtype = arch-rules",
+            "- build/reports/archrules/main.data (artifactType = binary)",
+            "- build/reports/archrules/test.data (artifactType = binary)")
     }
 
     @Test
@@ -599,5 +619,17 @@ archRules {
         val deprecationResult = results.firstOrNull { it.rule.ruleName.equals("deprecated") }
         assertThat(deprecationResult).isNotNull
         assertThat(deprecationResult!!.rule.priority).isEqualTo(Priority.LOW)
+    }
+
+    private fun containsInOrder(actual: String, vararg expected: String) {
+        var i = 0
+        for (e in expected) {
+            assertThat(actual).contains(e)
+            val newIndex = actual.indexOf(e, i)
+            assertThat(newIndex)
+                .`as`("$e found at $newIndex but should be after $i")
+                .isGreaterThan(i)
+            i = newIndex
+        }
     }
 }

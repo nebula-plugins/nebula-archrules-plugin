@@ -26,6 +26,13 @@ gradlePlugin {
             description = "Sets up a project to consume archrules libraries and run them against the code in the current project"
             tags.addAll("nebula", "archunit")
         }
+        create("aggregate") {
+            id = "com.netflix.nebula.archrules.aggregate"
+            implementationClass = "com.netflix.nebula.archrules.gradle.ArchrulesAggregateConsoleReportPlugin"
+            displayName = "ArchRules Aggregate Console Report Plugin"
+            description = "Consolidates console reports for multiple subprojects"
+            tags.addAll("nebula", "archunit")
+        }
     }
 }
 java {
@@ -39,7 +46,7 @@ testing {
             useJUnitJupiter()
             targets.all {
                 testTask.configure {
-                    maxParallelForks = 2
+                    maxParallelForks = 4
                 }
             }
         }
