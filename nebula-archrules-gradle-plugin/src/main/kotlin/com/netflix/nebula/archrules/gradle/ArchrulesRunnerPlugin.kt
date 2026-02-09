@@ -4,10 +4,14 @@ import com.netflix.nebula.archrules.gradle.ArchRuleAttribute.ARCH_RULES
 import com.tngtech.archunit.lang.Priority
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.attributes.Bundling
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.Usage
+import org.gradle.api.attributes.VerificationType
+import org.gradle.api.component.AdhocComponentWithVariants
 import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.plugins.internal.JavaConfigurationVariantMapping
 import org.gradle.api.tasks.SourceSet
 import org.gradle.internal.extensions.stdlib.capitalized
 import org.gradle.kotlin.dsl.add
@@ -54,13 +58,27 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
             }
 
             val consoleReportTask = project.tasks.register<PrintConsoleReportTask>("archRulesConsoleReport") {
-                dataFiles.set(
+                dataFiles.from(
                     project.provider { (project.tasks.withType<CheckRulesTask>().flatMap { it.outputs.files }) }
                 )
                 summaryForPassingDisabled.set(archRulesExt.skipPassingSummaries)
                 detailsThreshold.set(archRulesExt.consoleDetailsThreshold)
                 dependsOn(checkTasks)
                 onlyIf { archRulesExt.consoleReportEnabled.get() }
+            }
+
+            project.configurations.consumable("archRulesReportElements") {
+                description = "Report data for ArchRules"
+                outgoing.artifacts(
+                    project.provider { (project.tasks.withType<CheckRulesTask>().flatMap { it.outputs.files }) }
+                ){
+                    type = ArtifactTypeDefinition.BINARY_DATA_TYPE
+                    builtBy(project.tasks.withType<CheckRulesTask>())
+                }
+                attributes {
+                    attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category.VERIFICATION))
+                    attribute(VerificationType.VERIFICATION_TYPE_ATTRIBUTE, project.objects.named("arch-rules"))
+                }
             }
 
             val enforceTask = project.tasks.register<EnforceArchRulesTask>("enforceArchRules") {
