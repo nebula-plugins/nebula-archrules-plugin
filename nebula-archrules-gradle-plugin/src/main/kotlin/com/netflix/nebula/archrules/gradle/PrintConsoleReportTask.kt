@@ -46,7 +46,7 @@ abstract class PrintConsoleReportTask : DefaultTask() {
             .flatMap { ViolationsUtil.readDetails(it) }
             .toList()
         val byRule = ViolationsUtil.consolidatedFailures(list)
-        ViolationsUtil.printSummary(byRule, consoleOutput, summaryForPassingDisabled.get())
+        ViolationsUtil.printSummary(byRule, consoleOutput, summaryForPassingDisabled.get(), logger.isInfoEnabled)
         if (list.any {
                 it.status() == RuleResultStatus.FAIL
                         && !it.rule().priority().meetsThreshold(detailsThreshold.orNull)

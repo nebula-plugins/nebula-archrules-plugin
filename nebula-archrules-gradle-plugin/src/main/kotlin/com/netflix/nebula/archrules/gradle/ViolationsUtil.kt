@@ -59,7 +59,7 @@ class ViolationsUtil {
         }
 
         @JvmStatic
-        fun printSummary(resultMap: Map<Rule, List<RuleResult>>, output: StyledTextOutput, skipPassing: Boolean) {
+        fun printSummary(resultMap: Map<Rule, List<RuleResult>>, output: StyledTextOutput, skipPassing: Boolean, infoLogging: Boolean) {
             output.style(StyledTextOutput.Style.Header).println("ArchRule Summary:")
             val indent = 4
             val maxRuleNameLength = resultMap.keys.maxOfOrNull { it.ruleName().length } ?: 1
@@ -69,7 +69,7 @@ class ViolationsUtil {
                     classMap.forEach { (rule, results) ->
                         val failures = results.filter { it.status() != RuleResultStatus.PASS }
                         if (failures.isEmpty()) {
-                            if (!skipPassing) {
+                            if (!skipPassing || infoLogging) {
                                 output.style(StyledTextOutput.Style.Success)
                                     .text(" ".repeat(indent))
                                     .text(rule.ruleName().padEnd(maxRuleNameLength + 1))
