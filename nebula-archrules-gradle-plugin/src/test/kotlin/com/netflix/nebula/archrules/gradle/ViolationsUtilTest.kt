@@ -12,7 +12,7 @@ internal class ViolationsUtilTest {
         val output = MockStyledTextOutput()
         val rule = Rule("RuleClass", "RuleName", "description", Priority.MEDIUM)
         val results = listOf(RuleResult(rule, "message", RuleResultStatus.PASS))
-        ViolationsUtil.printSummary(mapOf(rule to results), output, false)
+        ViolationsUtil.printSummary(mapOf(rule to results), output, false, false)
         assertThat(output.getOutput())
             .contains("RuleClass")
             .contains("RuleName  MEDIUM     (No failures)")
@@ -23,16 +23,27 @@ internal class ViolationsUtilTest {
         val output = MockStyledTextOutput()
         val rule = Rule("RuleClass", "RuleName", "description", Priority.MEDIUM)
         val results = listOf(RuleResult(rule, "message", RuleResultStatus.PASS))
-        ViolationsUtil.printSummary(mapOf(rule to results), output, true)
+        ViolationsUtil.printSummary(mapOf(rule to results), output, true, false)
         assertThat(output.getOutput())
             .contains("RuleClass")
             .doesNotContain("RuleName")
     }
 
     @Test
+    fun `test printSummary skipPassing but infoLogging on`() {
+        val output = MockStyledTextOutput()
+        val rule = Rule("RuleClass", "RuleName", "description", Priority.MEDIUM)
+        val results = listOf(RuleResult(rule, "message", RuleResultStatus.PASS))
+        ViolationsUtil.printSummary(mapOf(rule to results), output, true, true)
+        assertThat(output.getOutput())
+            .contains("RuleClass")
+            .contains("RuleName  MEDIUM     (No failures)")
+    }
+
+    @Test
     fun `test printSummary empty results`() {
         val output = MockStyledTextOutput()
-        ViolationsUtil.printSummary(mapOf(), output, false)
+        ViolationsUtil.printSummary(mapOf(), output, false, false)
         assertThat(output.getOutput()).isEqualTo("ArchRule Summary:\n")
     }
 }
