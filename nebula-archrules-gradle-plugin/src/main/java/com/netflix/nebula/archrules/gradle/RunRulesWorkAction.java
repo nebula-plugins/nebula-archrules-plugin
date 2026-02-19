@@ -3,6 +3,7 @@ package com.netflix.nebula.archrules.gradle;
 import com.netflix.nebula.archrules.core.ArchRulesService;
 import com.netflix.nebula.archrules.core.Runner;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.core.importer.ClassFileImporterWithPackage;
 import com.tngtech.archunit.lang.Priority;
 import org.gradle.workers.WorkAction;
 import org.jspecify.annotations.NullMarked;
@@ -69,7 +70,7 @@ public abstract class RunRulesWorkAction implements WorkAction<RunRulesParams> {
                     .map(it -> it.type().getCanonicalName())
                     .collect(Collectors.joining(",")));
         }
-        final var classesToCheck = new ClassFileImporter()
+        final var classesToCheck = new ClassFileImporterWithPackage()
                 .importPaths(getParameters().getClassesToCheck().getFiles().stream().map(File::toPath).toList());
         final List<RuleResult> violationList = new ArrayList<>();
 

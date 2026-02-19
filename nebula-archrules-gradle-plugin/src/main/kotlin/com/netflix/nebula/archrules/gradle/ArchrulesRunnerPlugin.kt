@@ -7,11 +7,10 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.attributes.Bundling
 import org.gradle.api.attributes.Category
+import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
 import org.gradle.api.attributes.VerificationType
-import org.gradle.api.component.AdhocComponentWithVariants
 import org.gradle.api.plugins.JavaPluginExtension
-import org.gradle.api.plugins.internal.JavaConfigurationVariantMapping
 import org.gradle.api.tasks.SourceSet
 import org.gradle.internal.extensions.stdlib.capitalized
 import org.gradle.kotlin.dsl.add
@@ -108,6 +107,7 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
             attributes {
                 attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
                 attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements.CLASSES))
             }
         }
 

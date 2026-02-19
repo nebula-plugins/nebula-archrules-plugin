@@ -16,6 +16,9 @@ Rules can be sourced from OSS libraries or private internal libraries.
 ### Runner Plugin
 [![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/com.netflix.nebula.archrules.runner?style=for-the-badge&color=01AF01)](https://plugins.gradle.org/plugin/com.netflix.nebula.archrules.runner)
 
+### Aggregate Console Report Plugin
+[![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/com.netflix.nebula.archrules.aggregate?style=for-the-badge&color=01AF01)](https://plugins.gradle.org/plugin/com.netflix.nebula.archrules.aggregate)
+
 
 ## Authoring Rules
 

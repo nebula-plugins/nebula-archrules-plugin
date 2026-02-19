@@ -1,16 +1,13 @@
 package com.netflix.nebula.archrules.core;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
-import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.core.importer.ClassFileImporterWithPackage;
 import com.tngtech.archunit.core.importer.Location;
 import com.tngtech.archunit.core.importer.Locations;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.EvaluationResult;
 
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -52,22 +49,7 @@ public class Runner {
                 .map(Locations::ofClass)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
-        List<URL> uris = Arrays.stream(classesToCheck)
-                .map(clazz -> clazz.getPackage().getName())
-                .map(Locations::ofPackage)
-                .flatMap(it -> it.stream().map(Location::asURI))
-                .map(u -> URI.create(u.toASCIIString() + "package-info.class"))
-                .map(uri -> {
-                    try {
-                        return uri.toURL();
-                    } catch (MalformedURLException e) {
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-        locs.addAll(Locations.of(uris));
-        final JavaClasses classes = new ClassFileImporter()
+        final JavaClasses classes = new ClassFileImporterWithPackage()
                 .importLocations(locs);
         return check(rule, classes);
     }
