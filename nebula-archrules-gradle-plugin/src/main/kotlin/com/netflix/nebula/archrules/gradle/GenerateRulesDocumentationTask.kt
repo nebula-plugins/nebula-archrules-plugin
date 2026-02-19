@@ -15,7 +15,7 @@ import java.net.URLClassLoader
 import java.util.ServiceLoader
 
 @CacheableTask
-abstract class GenerateRulesDocsTask : DefaultTask() {
+abstract class GenerateRulesDocumentationTask : DefaultTask() {
 
     @get:Classpath
     abstract val rulesClasspath: ConfigurableFileCollection

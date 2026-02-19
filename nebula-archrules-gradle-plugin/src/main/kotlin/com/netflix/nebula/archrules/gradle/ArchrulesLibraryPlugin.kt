@@ -73,7 +73,7 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                 archiveClassifier.set("arch-rules")
                 dependsOn(generateServicesTask)
             }
-            project.tasks.register<GenerateRulesDocsTask>("generateRulesDocs") {
+            project.tasks.register<GenerateRulesDocumentationTask>("generateRulesDocumentation") {
                 description = "Generates documentation for ArchRules"
                 group = "documentation"
                 rulesClasspath.from(archRulesSourceSet.output)

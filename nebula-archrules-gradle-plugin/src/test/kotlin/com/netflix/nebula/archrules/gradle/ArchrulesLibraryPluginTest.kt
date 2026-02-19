@@ -334,7 +334,7 @@ class ArchrulesLibraryPluginTest {
 
 
     @Test
-    fun `test generateRulesDocs task`() {
+    fun `test generateRulesDocumentation task`() {
         val runner = testProject(projectDir) {
             properties {
                 buildCache(true)
@@ -364,11 +364,11 @@ class ArchrulesLibraryPluginTest {
             }
         }
 
-        val result = runner.run("generateRulesDocs", "--stacktrace") {
+        val result = runner.run("generateRulesDocumentation", "--stacktrace") {
             forwardOutput()
         }
 
-        assertThat(result.task(":generateRulesDocs"))
+        assertThat(result.task(":generateRulesDocumentation"))
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
         val docsFile = projectDir.resolve("build/docs/archrules.md")
