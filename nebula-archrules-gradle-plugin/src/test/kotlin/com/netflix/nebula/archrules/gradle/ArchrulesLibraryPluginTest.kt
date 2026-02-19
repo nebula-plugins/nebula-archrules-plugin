@@ -331,4 +331,57 @@ class ArchrulesLibraryPluginTest {
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
     }
+
+
+    @Test
+    fun `test generateRulesDocs task`() {
+        val runner = testProject(projectDir) {
+            properties {
+                buildCache(true)
+            }
+            settings {
+                name("library-with-rules")
+            }
+            rootProject {
+                plugins {
+                    id("java-library")
+                    id("com.netflix.nebula.archrules.library")
+                }
+                repositories {
+                    maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
+                    mavenCentral()
+                }
+                src {
+                    sourceSet("archRules") {
+                        dontUseRule()
+                        exampleDeprecatedHighArchRule()
+                    }
+                }
+                dependencies("""
+                    archRulesImplementation("com.netflix.nebula:archrules-nullability:0.+")
+                """.trimIndent()
+                )
+            }
+        }
+
+        val result = runner.run("generateRulesDocs", "--stacktrace") {
+            forwardOutput()
+        }
+
+        assertThat(result.task(":generateRulesDocs"))
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        val docsFile = projectDir.resolve("docs/archrules.md")
+        assertThat(docsFile).exists()
+
+        assertThat(docsFile.readText())
+            .contains("# ArchRules Documentation")
+            .contains("## deprecated\n" +
+                "\n" +
+                "**Description:** No code should reference deprecated APIs, because usage of deprecated APIs introduces risk that future upgrades and migrations will be blocked\n" +
+                "\n" +
+                "**Priority:** HIGH")
+            .contains("## dont use")
+            .doesNotContain("## public classes should be @NullMarked")
+    }
 }

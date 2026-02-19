@@ -74,6 +74,15 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                 archiveClassifier.set("arch-rules")
                 dependsOn(generateServicesTask)
             }
+            project.tasks.register<GenerateRulesDocsTask>("generateRulesDocs") {
+                description = "Generates documentation for ArchRules"
+                group = "documentation"
+                rulesClasspath.set(archRulesSourceSet.output)
+                outputFile.convention(
+                    project.layout.projectDirectory.file("docs/archrules.md")
+                )
+                dependsOn(generateServicesTask)
+            }
             registerRuntimeFeatureForSourceSet(project, archRulesSourceSet, jarTask)
             project.pluginManager.withPlugin("jvm-test-suite") {
                 val ext = project.extensions.getByType<TestingExtension>()
