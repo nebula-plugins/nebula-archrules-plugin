@@ -1,8 +1,18 @@
 package com.netflix.nebula.archrules.gradle
 
 import com.tngtech.archunit.lang.Priority
-import nebula.test.dsl.*
 import nebula.test.dsl.TestKitAssertions.assertThat
+import nebula.test.dsl.TestProjectBuilder
+import nebula.test.dsl.main
+import nebula.test.dsl.plugins
+import nebula.test.dsl.properties
+import nebula.test.dsl.repositories
+import nebula.test.dsl.rootProject
+import nebula.test.dsl.run
+import nebula.test.dsl.settings
+import nebula.test.dsl.src
+import nebula.test.dsl.test
+import nebula.test.dsl.testProject
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.named
 import org.gradle.testfixtures.ProjectBuilder
@@ -177,12 +187,14 @@ class ArchrulesRunnerPluginTest {
             forwardOutput()
         }
 
-        containsInOrder(result.output,
+        containsInOrder(
+            result.output,
             "Variant archRulesReportElements",
             "- org.gradle.category         = verification",
             "- org.gradle.verificationtype = arch-rules",
             "- build/reports/archrules/main.data (artifactType = binary)",
-            "- build/reports/archrules/test.data (artifactType = binary)")
+            "- build/reports/archrules/test.data (artifactType = binary)"
+        )
     }
 
     @Test
