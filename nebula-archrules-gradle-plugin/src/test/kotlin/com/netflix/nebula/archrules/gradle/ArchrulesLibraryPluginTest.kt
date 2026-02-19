@@ -371,7 +371,7 @@ class ArchrulesLibraryPluginTest {
         assertThat(result.task(":generateRulesDocs"))
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        val docsFile = projectDir.resolve("docs/archrules.md")
+        val docsFile = projectDir.resolve("build/docs/archrules.md")
         assertThat(docsFile).exists()
 
         assertThat(docsFile.readText())

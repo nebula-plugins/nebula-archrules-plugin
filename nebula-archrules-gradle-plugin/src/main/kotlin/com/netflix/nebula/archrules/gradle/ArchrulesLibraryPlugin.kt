@@ -3,7 +3,6 @@ package com.netflix.nebula.archrules.gradle
 import com.netflix.nebula.archrules.gradle.ArchRuleAttribute.ARCH_RULES
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.attributes.Usage
 import org.gradle.api.component.AdhocComponentWithVariants
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact
@@ -77,9 +76,9 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
             project.tasks.register<GenerateRulesDocsTask>("generateRulesDocs") {
                 description = "Generates documentation for ArchRules"
                 group = "documentation"
-                rulesClasspath.set(archRulesSourceSet.output)
+                rulesClasspath.from(archRulesSourceSet.output)
                 outputFile.convention(
-                    project.layout.projectDirectory.file("docs/archrules.md")
+                    project.layout.buildDirectory.file("docs/archrules.md")
                 )
                 dependsOn(generateServicesTask)
             }

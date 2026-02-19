@@ -5,13 +5,12 @@ import com.netflix.nebula.archrules.core.Runner
 import com.tngtech.archunit.lang.ArchRule
 import com.tngtech.archunit.lang.Priority
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import java.io.File
 import java.net.URLClassLoader
 import java.util.ServiceLoader
 
@@ -19,7 +18,7 @@ import java.util.ServiceLoader
 abstract class GenerateRulesDocsTask : DefaultTask() {
 
     @get:Classpath
-    abstract val rulesClasspath: ListProperty<File>
+    abstract val rulesClasspath: ConfigurableFileCollection
 
     @get:OutputFile
     abstract val outputFile: RegularFileProperty
@@ -27,7 +26,7 @@ abstract class GenerateRulesDocsTask : DefaultTask() {
     @TaskAction
     fun generateDocs() {
         val rules = mutableListOf<RuleMetadata>()
-        val classPathUrls = rulesClasspath.get().map { it.toURI().toURL() }.toTypedArray()
+        val classPathUrls = rulesClasspath.files.map { it.toURI().toURL() }.toTypedArray()
 
         URLClassLoader(classPathUrls, this.javaClass.classLoader).use { classLoader ->
             ServiceLoader.load(ArchRulesService::class.java, classLoader).forEach { service ->
