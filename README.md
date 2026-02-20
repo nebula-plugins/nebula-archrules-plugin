@@ -76,6 +76,11 @@ You may declare dependencies on the `archRulesImplementation` configuration. Thi
 1) using a dependency as helper for your rule code
 2) transitively depending on a standalone rules library so that its rules are run in any project which runs the current project's rules
 
+#### Automated Documentation
+
+The ArchRules Library plugin provides the `generateRulesDocumentation` task to generate markdown documentation for all of your library's rules authored in the `archRules` source set.
+Running `./gradlew generateRulesDocumentation` creates documentation at `build/docs/archrules.md`, which includes all rules, descriptions, and priorities.
+
 ### Testing Rules
 
 The ArchRules Library plugin creates a test suite called `archRulesTest`. You can write unit tests for your rules in the `archRulesTest` source set.
