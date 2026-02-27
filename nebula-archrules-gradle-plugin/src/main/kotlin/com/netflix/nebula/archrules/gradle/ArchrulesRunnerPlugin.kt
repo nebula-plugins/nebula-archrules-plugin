@@ -104,6 +104,7 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                 project.configurations.getByName("archRules"),
                 configurations.getByName(sourceSet.runtimeClasspathConfigurationName)
             )
+            attributes.addAllLater(project.configurations.getByName(sourceSet.runtimeClasspathConfigurationName).attributes)
             attributes {
                 attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
                 attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
