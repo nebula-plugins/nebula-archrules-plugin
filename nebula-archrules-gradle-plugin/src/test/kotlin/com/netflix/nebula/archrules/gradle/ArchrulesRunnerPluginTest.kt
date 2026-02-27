@@ -11,6 +11,7 @@ import nebula.test.dsl.rootProject
 import nebula.test.dsl.run
 import nebula.test.dsl.settings
 import nebula.test.dsl.src
+import nebula.test.dsl.subProject
 import nebula.test.dsl.test
 import nebula.test.dsl.testProject
 import org.gradle.kotlin.dsl.findByType
@@ -46,7 +47,7 @@ class ArchrulesRunnerPluginTest {
     ) {
         properties {
             buildCache(true)
-            property("org.gradle.configuration-cache", "true")
+            configurationCache(true)
         }
         settings {
             name("consumer")
@@ -182,7 +183,7 @@ class ArchrulesRunnerPluginTest {
             setupConsumerProject()
         }
 
-        val result = runner.run("outgoingVariants") {
+        val result = runner.run("outgoingVariants", "--stacktrace") {
             withGradleVersion(gradleVersion.version)
             forwardOutput()
         }
@@ -631,6 +632,83 @@ archRules {
         val deprecationResult = results.firstOrNull { it.rule.ruleName.equals("deprecated") }
         assertThat(deprecationResult).isNotNull
         assertThat(deprecationResult!!.rule.priority).isEqualTo(Priority.LOW)
+    }
+
+    /**
+     * This test is for making sure archrules will interop with other plugins that create and consume multiple variants
+     */
+    @Test
+    fun `archrules runtime classpaths inherit sourceset runtime attributes`() {
+        val runner = testProject(projectDir) {
+            properties {
+                buildCache(true)
+                configurationCache(true)
+            }
+            subProject("multi-variant-library") {
+                plugins {
+                    id("java-library")
+                }
+                javaToolchain(17)
+                rawBuildScript(
+                    // language=kotlin
+                    """
+val myAttribute = Attribute.of("com.example.my-attribute", String::class.java)
+val otherSourceSet = java.sourceSets.create("other2")
+val otherJar = project.tasks.register<Jar>("otherJar") {
+    archiveClassifier.set("v2")
+    from(otherSourceSet.output)
+}
+configurations.named("runtimeElements") {
+    attributes {
+        attribute(myAttribute, "v1")
+    }
+}
+
+configurations.consumable("customRuntimeElements") {
+    attributes {
+        attribute(myAttribute, "v2")
+        attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements.JAR))
+        attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named( Usage.JAVA_RUNTIME))
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named( Category.LIBRARY))
+        attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 17)
+    }
+}
+artifacts {
+    add("customRuntimeElements", otherJar)
+}
+"""
+                )
+            }
+            subProject("consumer") {
+                plugins {
+                    id("java")
+                    id("com.netflix.nebula.archrules.runner")
+                }
+                dependencies(
+                    """implementation(project(":multi-variant-library"))"""
+                )
+                // language=kotlin
+                rawBuildScript(
+                    """
+val myAttribute = Attribute.of("com.example.my-attribute", String::class.java)
+configurations.named("runtimeClasspath") {
+    attributes {
+        attribute(myAttribute, "v2")
+    }
+}
+configurations.named("testRuntimeClasspath") {
+    attributes {
+        attribute(myAttribute, "v2")
+    }
+}
+"""
+                )
+            }
+        }
+
+        val result = runner.run("archRulesConsoleReport", "--stacktrace")
+        assertThat(result.task(":consumer:archRulesConsoleReport")).hasOutcome(TaskOutcome.SUCCESS)
     }
 
     private fun containsInOrder(actual: String, vararg expected: String) {
