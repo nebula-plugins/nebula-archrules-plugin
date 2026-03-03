@@ -2,16 +2,22 @@ package com.netflix.nebula.archrules.gradle
 
 import com.tngtech.archunit.lang.Priority
 import org.gradle.internal.logging.text.StyledTextOutput
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.IOException
 import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
 
 /**
  * Helpers for dealing with [RuleResult]
  */
 class ViolationsUtil {
     companion object {
+        val log: Logger = LoggerFactory.getLogger(ViolationsUtil::class.java)
+
         @JvmStatic
         fun readDetails(dataFile: File): List<RuleResult> {
             val list: MutableList<RuleResult> = mutableListOf()
@@ -23,7 +29,7 @@ class ViolationsUtil {
                     }
                 }
             } catch (e: IOException) {
-                throw RuntimeException(e)
+                log.warn("Archrules data read failed for {}", dataFile.absolutePath, e)
             } catch (e: ClassNotFoundException) {
                 throw RuntimeException(e)
             }
@@ -31,10 +37,22 @@ class ViolationsUtil {
         }
 
         @JvmStatic
-        fun printReport(violations: Map<Rule, List<RuleResult>>,
-                        output: StyledTextOutput,
-                        priorityThreshold: Priority?,
-                        infoLogging: Boolean) {
+        fun writeDetails(dataFile: File, violationList : List<RuleResult>) {
+            ObjectOutputStream(FileOutputStream(dataFile)).use { out ->
+                out.writeInt(violationList.size)
+                violationList.forEach {
+                    out.writeObject(it);
+                }
+            }
+        }
+
+        @JvmStatic
+        fun printReport(
+            violations: Map<Rule, List<RuleResult>>,
+            output: StyledTextOutput,
+            priorityThreshold: Priority?,
+            infoLogging: Boolean
+        ) {
             output.style(StyledTextOutput.Style.Header).println("ArchRule Violation Details:")
             violations
                 .mapValues { it.value.filter { it.rule().priority().meetsThreshold(priorityThreshold) || infoLogging } }
@@ -59,7 +77,12 @@ class ViolationsUtil {
         }
 
         @JvmStatic
-        fun printSummary(resultMap: Map<Rule, List<RuleResult>>, output: StyledTextOutput, skipPassing: Boolean, infoLogging: Boolean) {
+        fun printSummary(
+            resultMap: Map<Rule, List<RuleResult>>,
+            output: StyledTextOutput,
+            skipPassing: Boolean,
+            infoLogging: Boolean
+        ) {
             output.style(StyledTextOutput.Style.Header).println("ArchRule Summary:")
             val indent = 4
             val maxRuleNameLength = resultMap.keys.maxOfOrNull { it.ruleName().length } ?: 1
