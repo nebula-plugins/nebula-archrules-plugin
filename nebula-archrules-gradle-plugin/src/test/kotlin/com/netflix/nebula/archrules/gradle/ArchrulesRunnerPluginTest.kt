@@ -692,14 +692,18 @@ artifacts {
                 rawBuildScript(
                     """
 val myAttribute = Attribute.of("com.example.my-attribute", String::class.java)
-configurations.named("runtimeClasspath") {
-    attributes {
-        attribute(myAttribute, "v2")
+afterEvaluate {
+    configurations.named("runtimeClasspath") {
+        attributes {
+            attribute(myAttribute, "v2")
+        }
     }
 }
-configurations.named("testRuntimeClasspath") {
-    attributes {
-        attribute(myAttribute, "v2")
+afterEvaluate {
+    configurations.named("testRuntimeClasspath") {
+        attributes {
+            attribute(myAttribute, "v2")
+        }
     }
 }
 """
@@ -707,8 +711,10 @@ configurations.named("testRuntimeClasspath") {
             }
         }
 
+        runner.run(":consumer:dI", "--dependency", "multi-variant-library", "--configuration", "mainArchrulesRuntime")
         val result = runner.run("archRulesConsoleReport", "--stacktrace")
-        assertThat(result.task(":consumer:archRulesConsoleReport")).hasOutcome(TaskOutcome.SUCCESS)
+        assertThat(result.task(":consumer:archRulesConsoleReport"))
+            .hasOutcome(TaskOutcome.SUCCESS)
     }
 
     private fun containsInOrder(actual: String, vararg expected: String) {
