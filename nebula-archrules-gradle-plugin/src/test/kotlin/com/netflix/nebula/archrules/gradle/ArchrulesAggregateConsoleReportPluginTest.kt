@@ -14,6 +14,7 @@ import nebula.test.dsl.subProject
 import nebula.test.dsl.testProject
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.testfixtures.ProjectBuilder
+import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
@@ -22,9 +23,11 @@ class ArchrulesAggregateConsoleReportPluginTest {
     @TempDir
     lateinit var projectDir: File
 
-    private fun TestProjectBuilder.setup(withFailures : Boolean = true) {
+    private fun TestProjectBuilder.setup(withFailures: Boolean = true) {
         properties {
             buildCache(true)
+            configurationCache(true)
+            property("org.gradle.unsafe.isolated-projects","true")
         }
         rootProject {
             plugins {
@@ -55,7 +58,7 @@ class ArchrulesAggregateConsoleReportPluginTest {
             )
             src {
                 main {
-                    if(withFailures) {
+                    if (withFailures) {
                         exampleDeprecatedUsage("FailingCode1")
                     }
                 }
@@ -66,7 +69,7 @@ class ArchrulesAggregateConsoleReportPluginTest {
                 id("java")
                 id("com.netflix.nebula.archrules.runner")
             }
-            repositories{
+            repositories {
                 mavenCentral()
             }
             dependencies(
@@ -75,7 +78,7 @@ class ArchrulesAggregateConsoleReportPluginTest {
             )
             src {
                 main {
-                    if(withFailures) {
+                    if (withFailures) {
                         exampleDeprecatedUsage("FailingCode2")
                     }
                 }
@@ -96,11 +99,13 @@ class ArchrulesAggregateConsoleReportPluginTest {
     @Test
     fun test() {
         val runner = testProject(projectDir) {
-         setup()
+            setup()
         }
         val result = runner.run("archRulesAggregateConsoleReport") {
             forwardOutput()
         }
+        assertThat(result.task(":sub1:checkArchRulesMain"))
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
         assertThat(result.output)
             .contains("deprecatedForRemoval  MEDIUM     (2 failures)")
             .contains("deprecated            LOW        (4 failures)")
@@ -110,8 +115,9 @@ class ArchrulesAggregateConsoleReportPluginTest {
     fun `test passing skip`() {
         val runner = testProject(projectDir) {
             setup(withFailures = false)
-            rootProject{
-                rawBuildScript("""
+            rootProject {
+                rawBuildScript(
+                    """
 archRulesAggregate {
     skipPassingSummaries = true
 }
@@ -132,8 +138,9 @@ archRulesAggregate {
     fun `test details threshold`() {
         val runner = testProject(projectDir) {
             setup()
-            rootProject{
-                rawBuildScript("""
+            rootProject {
+                rawBuildScript(
+                    """
 archRulesAggregate {
     consoleDetailsThreshold("LOW")
 }
@@ -146,5 +153,30 @@ archRulesAggregate {
         }
         assertThat(result.output)
             .contains("Method <com.example.consumer.FailingCode1.aMethod()> calls method <com.example.library.LibraryClass.deprecatedApi()>")
+    }
+
+    @Test
+    fun `test empty subproject`() {
+        val runner = testProject(projectDir) {
+            setup()
+            subProject("empty") {
+                plugins {
+                    id("base")
+                }
+                rawBuildScript(
+                    // language=kotlin
+                    """
+val jarTask = tasks.register<Jar>("someJar")
+artifacts {
+    add("default", jarTask)
+}
+"""
+                )
+            }
+        }
+        val result = runner.run("archRulesAggregateConsoleReport")
+        assertThat(result.task(":archRulesAggregateConsoleReport"))
+            .hasOutcome(TaskOutcome.SUCCESS)
+        assertThat(result.output).doesNotContain("Archrules data read failed")
     }
 }
