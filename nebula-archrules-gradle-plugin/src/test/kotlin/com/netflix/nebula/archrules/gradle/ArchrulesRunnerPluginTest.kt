@@ -111,6 +111,7 @@ class ArchrulesRunnerPluginTest {
         project.plugins.apply(ArchrulesRunnerPlugin::class.java)
         val extension = project.extensions.findByType<ArchrulesExtension>()!!
         assertThat(extension.consoleReportEnabled.get()).isTrue()
+        assertThat(extension.jsonReportEnabled.get()).isTrue()
         assertThat(extension.sourceSetsToSkip.get()).containsExactly("archRulesTest")
         assertThat(extension.skipPassingSummaries.get()).isFalse()
         assertThat(extension.failureThreshold.isPresent).isFalse()
@@ -267,6 +268,36 @@ archRules {
             .doesNotContain(MEDIUM_FAILURE_DETAILS)
             .doesNotContain(LOW_FAILURE_DETAILS)
             .doesNotContain(FILTERED_DETAILS_NOTE)
+    }
+
+    @Test
+    fun `json report can be disabled`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject(setupSources = false) {
+                rawBuildScript(
+                    """
+archRules {
+    jsonReportEnabled = false
+}
+"""
+                )
+            }
+        }
+
+        val result = runner.run("check", "--stacktrace", "-x", "test")
+
+        assertThat(result.task(":archRulesJsonReport"))
+            .`as`("json report task is skipped")
+            .hasOutcome(TaskOutcome.SKIPPED)
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+
+        val jsonReport = projectDir.resolve("build/reports/archrules/report.json")
+        assertThat(jsonReport)
+            .`as`("json report is not created")
+            .doesNotExist()
     }
 
     @ParameterizedTest

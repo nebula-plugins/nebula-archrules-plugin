@@ -21,6 +21,12 @@ import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 
 class ArchrulesRunnerPlugin : Plugin<Project> {
+    companion object {
+        private const val ARCHRULES_VERSION = "0.+" // keep in sync
+        private const val JACKSON_VERSION = "3.1.0" // keep in sync with compileOnly dependency
+        private const val ARCHRULES_DEPENDENCY = "com.netflix.nebula:nebula-archrules-gradle-plugin:$ARCHRULES_VERSION"
+        private const val JACKSON_DEPENDENCY = "tools.jackson.core:jackson-databind:$JACKSON_VERSION"
+    }
     override fun apply(project: Project) {
         val archRulesReportDir = project.layout.buildDirectory.dir("reports/archrules")
         project.configurations.register("archRules") {
@@ -40,6 +46,7 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
 
             val archRulesExt = project.extensions.create<ArchrulesExtension>("archRules")
             archRulesExt.consoleReportEnabled.convention(true)
+            archRulesExt.jsonReportEnabled.convention(true)
             archRulesExt.skipPassingSummaries.convention(false)
             archRulesExt.sourceSetsToSkip.add("archRulesTest")
             archRulesExt.consoleDetailsThreshold.convention(Priority.MEDIUM)
@@ -48,12 +55,22 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                     project.configureCheckTaskForSourceSet(this, archRulesExt)
                 }
             val checkTasks = project.tasks.withType<CheckRulesTask>()
+
+            val jsonReportDependencies = project.configurations.dependencyScope("archRulesJsonReporting"){
+                project.dependencies.add(this.name, ARCHRULES_DEPENDENCY)
+                project.dependencies.add(this.name, JACKSON_DEPENDENCY)
+            }
+            val jsonReportClasspath = project.configurations.resolvable("archRulesJsonReportingResolved"){
+                extendsFrom(jsonReportDependencies.get())
+            }
             val jsonReportTask = project.tasks.register<PrintJsonReportTask>("archRulesJsonReport") {
                 getDataFiles().set(
                     project.provider { (project.tasks.withType<CheckRulesTask>().flatMap { it.outputs.files }) }
                 )
                 getJsonReportFile().set(archRulesReportDir.map { it.file("report.json").asFile })
+                reportingClasspath.setFrom(jsonReportClasspath)
                 dependsOn(checkTasks)
+                onlyIf { archRulesExt.jsonReportEnabled.get() }
             }
 
             val consoleReportTask = project.tasks.register<PrintConsoleReportTask>("archRulesConsoleReport") {
