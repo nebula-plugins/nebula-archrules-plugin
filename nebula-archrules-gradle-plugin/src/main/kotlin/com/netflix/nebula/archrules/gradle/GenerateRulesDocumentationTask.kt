@@ -21,24 +21,13 @@ abstract class GenerateRulesDocumentationTask : DefaultTask() {
     @get:Classpath
     abstract val rulesClasspath: ConfigurableFileCollection
 
-    @get:Classpath
-    abstract val dependencyClasspath: ConfigurableFileCollection
-
     @get:OutputFile
     abstract val outputFile: RegularFileProperty
 
     @TaskAction
     fun generateDocs() {
         val rules = mutableListOf<RuleMetadata>()
-        val rulesUrls = rulesClasspath.files.map { it.toURI().toURL() }.toTypedArray()
-        val dependencyUrls = dependencyClasspath.files.map { it.toURI().toURL() }.toTypedArray()
-
-//        val ownClassLoader = URLClassLoader(rulesUrls, javaClass.classLoader)
-//        val ownArchRulesClasses = ServiceLoader.load(ArchRulesService::class.java, ownClassLoader)
-//            .stream()
-//            .map { it.type().name }
-//            .toList()
-//            .toSet()
+        val classpathUrls = rulesClasspath.files.map { it.toURI().toURL() }.toTypedArray()
 
         val ownArchRulesClasses = rulesClasspath.files.map {
             File(
@@ -52,7 +41,7 @@ abstract class GenerateRulesDocumentationTask : DefaultTask() {
             ?.toSet()
             ?: emptySet()
 
-        URLClassLoader(rulesUrls + dependencyUrls, this.javaClass.classLoader).use { classLoader ->
+        URLClassLoader(classpathUrls, this.javaClass.classLoader).use { classLoader ->
             ServiceLoader.load(ArchRulesService::class.java, classLoader)
                 .filter { it.javaClass.name in ownArchRulesClasses }
                 .forEach { service ->
