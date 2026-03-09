@@ -3,7 +3,6 @@ package com.netflix.nebula.archrules.gradle
 import nebula.test.dsl.*
 import nebula.test.dsl.TestKitAssertions.assertThat
 import org.gradle.testkit.runner.TaskOutcome
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
@@ -90,6 +89,10 @@ internal class IntegrationTest {
 
         assertThat(result.task(":code-to-check:check"))
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE)
+
+        assertThat(result.task(":code-to-check:enforceArchRules"))
+            .hasOutcome(TaskOutcome.SKIPPED)
+
         assertThat(result)
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
@@ -192,6 +195,76 @@ archRules {
         }
 
         val result = runner.run("check", "--stacktrace", "-x", "test")
+
+        assertThat(result.task(":code-to-check:checkArchRulesMain"))
+            .`as`("archRules run for main source set")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        assertThat(result.task(":code-to-check:check"))
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE)
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+    }
+
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `test empty rules project`(gradleVersion: SupportedGradleVersion) {
+        val runner = testProject(projectDir) {
+            properties {
+                buildCache(true)
+            }
+            emptyRuleProject()
+            projectWithCodeUsingDeprecatedCode()
+        }
+
+        val result = runner.run("check", "--stacktrace") {
+            withGradleVersion(gradleVersion.version)
+            forwardOutput()
+        }
+
+        assertThat(result.task(":library-with-rules:check"))
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE)
+
+        assertThat(result.task(":code-to-check:checkArchRulesMain"))
+            .`as`("archRules run for main source set with no rules defined")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        assertThat(result.task(":code-to-check:check"))
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE)
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+    }
+
+    @Test
+    fun `test fail mode with low threshold`() {
+        val runner = testProject(projectDir) {
+            properties {
+                buildCache(true)
+            }
+            projectWithRules()
+            projectWithCodeUsingDeprecatedCode {
+                rawBuildScript(
+                    """
+archRules {
+    failureThreshold("LOW")
+}
+"""
+                )
+            }
+        }
+
+        val result = runner.runAndFail("check", "--stacktrace") {
+            forwardOutput()
+        }
+
+        assertThat(result.task(":code-to-check:enforceArchRules"))
+            .hasOutcome(TaskOutcome.FAILED)
+
+        assertThat(result.output).contains("ArchRules failed: deprecated (LOW)")
 
         assertThat(result)
             .hasNoMutableStateWarnings()
