@@ -387,3 +387,54 @@ public class NullabilityArchRulesTest {
 """
     )
 }
+
+fun SourceSetBuilder.commonPredicateHelpers() {
+    java("com/example/common/MyPredicates.java",
+        //language=java
+        """
+package com.example.common;
+import com.tngtech.archunit.base.DescribedPredicate;
+import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.annotatedWith;
+public class MyPredicates {
+    public static DescribedPredicate<com.tngtech.archunit.core.domain.properties.CanBeAnnotated> kotlinDeprecated() {
+        return annotatedWith("kotlin.Deprecated")
+                .or(annotatedWith("kotlin.DeprecatedSinceKotlin"))
+                .as("kotlin deprecated");
+    }
+}
+        """)
+}
+
+fun SourceSetBuilder.kotlinDeprecatedRuleUsingPredicateHelper() {
+    java(
+        "com/example/library/KotlinDeprecatedRules.java",
+        //language=java
+        """
+package com.example.library;
+
+import com.netflix.nebula.archrules.core.ArchRulesService;
+import com.tngtech.archunit.lang.ArchRule;
+import com.tngtech.archunit.lang.Priority;
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
+import java.util.Map;
+import static com.tngtech.archunit.core.domain.JavaAccess.Predicates.target;
+import static com.tngtech.archunit.core.domain.JavaAccess.Predicates.targetOwner;
+import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.annotatedWith;
+import static com.example.common.MyPredicates.kotlinDeprecated;
+
+public class KotlinDeprecatedRules implements ArchRulesService {
+    public static final ArchRule noKotlinDeprecated = ArchRuleDefinition.priority(Priority.LOW)
+            .noClasses()
+            .should().accessTargetWhere(targetOwner(kotlinDeprecated()))
+            .orShould().accessTargetWhere(target(kotlinDeprecated()))
+            .orShould().dependOnClassesThat(kotlinDeprecated())
+            .allowEmptyShould(true);
+
+    @Override
+    public Map<String, ArchRule> getRules() {
+        return Map.of("kotlinDeprecated", noKotlinDeprecated);
+    }
+}
+"""
+    )
+}
