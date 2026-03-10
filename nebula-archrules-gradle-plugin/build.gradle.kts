@@ -1,3 +1,5 @@
+import org.gradle.plugin.compatibility.compatibility
+
 plugins {
     id("com.netflix.nebula.plugin-plugin")
     `kotlin-dsl`
@@ -5,7 +7,7 @@ plugins {
 description = "Plugins for authoring and running Nebula ArchRules"
 dependencies {
     implementation(project(":nebula-archrules-core"))
-    implementation("tools.jackson.core:jackson-databind:3.0.2")
+    compileOnly("tools.jackson.core:jackson-databind:3.1.0") // keep in sync with ArchrulesRunnerPlugin
 
     testImplementation("net.javacrumbs.json-unit:json-unit-assertj:5.0.0")
     testImplementation("org.json:json:20250517")
@@ -18,6 +20,11 @@ gradlePlugin {
             displayName = "ArchRules Library Plugin"
             description = "Sets up a project for declaring archrules to be used in another project via the runner plugin"
             tags.addAll("nebula", "archunit")
+            compatibility {
+                features {
+                    configurationCache = true
+                }
+            }
         }
         create("runner") {
             id = "com.netflix.nebula.archrules.runner"
@@ -25,6 +32,11 @@ gradlePlugin {
             displayName = "ArchRules Runner Plugin"
             description = "Sets up a project to consume archrules libraries and run them against the code in the current project"
             tags.addAll("nebula", "archunit")
+            compatibility {
+                features {
+                    configurationCache = true
+                }
+            }
         }
         create("aggregate") {
             id = "com.netflix.nebula.archrules.aggregate"
@@ -32,6 +44,11 @@ gradlePlugin {
             displayName = "ArchRules Aggregate Console Report Plugin"
             description = "Consolidates console reports for multiple subprojects"
             tags.addAll("nebula", "archunit")
+            compatibility {
+                features {
+                    configurationCache = true
+                }
+            }
         }
     }
 }

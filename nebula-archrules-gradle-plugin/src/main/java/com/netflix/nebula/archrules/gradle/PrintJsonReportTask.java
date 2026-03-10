@@ -1,19 +1,22 @@
 package com.netflix.nebula.archrules.gradle;
 
 import org.gradle.api.DefaultTask;
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.*;
-import org.jspecify.annotations.NonNull;
-import tools.jackson.databind.json.JsonMapper;
+import org.gradle.workers.WorkQueue;
+import org.gradle.workers.WorkerExecutor;
+import org.jspecify.annotations.NullMarked;
 
+import javax.inject.Inject;
 import java.io.File;
-import java.util.List;
 
 /**
  * Produces a JSON report of all ArchRules failures
  */
 @CacheableTask
+@NullMarked
 abstract public class PrintJsonReportTask extends DefaultTask {
 
     /**
@@ -22,29 +25,32 @@ abstract public class PrintJsonReportTask extends DefaultTask {
      */
     @InputFiles
     @PathSensitive(PathSensitivity.RELATIVE)
-    abstract public ListProperty<@NonNull File> getDataFiles();
+    abstract public ListProperty<File> getDataFiles();
 
     /**
      * File to output JSON to
      * @return file for output
      */
     @OutputFile
-    abstract public Property<@NonNull File> getJsonReportFile();
+    abstract public Property<File> getJsonReportFile();
+
+    @Classpath
+    abstract public ConfigurableFileCollection getReportingClasspath();
+
+    @Inject
+    abstract public WorkerExecutor getWorkerExecutor();
 
     /**
      * The action for this task
      */
     @TaskAction
     public void printReport() {
-        List<RuleResult> list = getDataFiles().get().stream()
-                .filter(File::exists)
-                .flatMap(it -> ViolationsUtil.readDetails(it).stream())
-                .toList();
-
-        final var report = new JsonReportRoot(list);
-        new JsonMapper().writeValue(getJsonReportFile().get(), report);
-    }
-
-    record JsonReportRoot(List<RuleResult> violations) {
+        WorkQueue workQueue = getWorkerExecutor()
+                .classLoaderIsolation(workerSpec ->
+                        workerSpec.getClasspath().from(getReportingClasspath()));
+        workQueue.submit(JsonReportWorkAction.class, parameters -> {
+            parameters.getDataFiles().set(getDataFiles());
+            parameters.getJsonReportFile().set(getJsonReportFile());
+        });
     }
 }
