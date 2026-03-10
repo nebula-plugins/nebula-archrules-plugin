@@ -339,10 +339,23 @@ class ArchrulesLibraryPluginTest {
             properties {
                 buildCache(true)
             }
-            settings {
-                name("library-with-rules")
+            subProject("common") {
+                plugins {
+                    id("java-library")
+                }
+                repositories {
+                    mavenCentral()
+                }
+                dependencies("""
+                    api("com.tngtech.archunit:archunit:1.+")
+                """.trimIndent())
+                src {
+                    main {
+                        commonPredicateHelpers()
+                    }
+                }
             }
-            rootProject {
+            subProject("archrules-library") {
                 plugins {
                     id("java-library")
                     id("com.netflix.nebula.archrules.library")
@@ -355,23 +368,25 @@ class ArchrulesLibraryPluginTest {
                     sourceSet("archRules") {
                         dontUseRule()
                         exampleDeprecatedHighArchRule()
+                        kotlinDeprecatedRuleUsingPredicateHelper()
                     }
                 }
                 dependencies("""
                     archRulesImplementation("com.netflix.nebula:archrules-nullability:0.+")
+                    archRulesImplementation(project(":common"))
                 """.trimIndent()
                 )
             }
         }
 
-        val result = runner.run("generateRulesDocumentation", "--stacktrace") {
+        val result = runner.run(":archrules-library:generateRulesDocumentation", "--stacktrace") {
             forwardOutput()
         }
 
-        assertThat(result.task(":generateRulesDocumentation"))
+        assertThat(result.task(":archrules-library:generateRulesDocumentation"))
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        val docsFile = projectDir.resolve("build/docs/archrules.md")
+        val docsFile = projectDir.resolve("archrules-library/build/docs/archrules.md")
         assertThat(docsFile).exists()
 
         assertThat(docsFile.readText())
@@ -382,6 +397,7 @@ class ArchrulesLibraryPluginTest {
                 "\n" +
                 "**Priority:** HIGH")
             .contains("## dont use")
+            .contains("## kotlinDeprecated")
             .doesNotContain("## public classes should be @NullMarked")
     }
 }

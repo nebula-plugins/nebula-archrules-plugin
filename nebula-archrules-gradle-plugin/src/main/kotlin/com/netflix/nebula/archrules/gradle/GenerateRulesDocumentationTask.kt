@@ -11,6 +11,7 @@ import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import java.io.File
 import java.net.URLClassLoader
 import java.util.ServiceLoader
 
@@ -26,10 +27,24 @@ abstract class GenerateRulesDocumentationTask : DefaultTask() {
     @TaskAction
     fun generateDocs() {
         val rules = mutableListOf<RuleMetadata>()
-        val classPathUrls = rulesClasspath.files.map { it.toURI().toURL() }.toTypedArray()
+        val classpathUrls = rulesClasspath.files.map { it.toURI().toURL() }.toTypedArray()
 
-        URLClassLoader(classPathUrls, this.javaClass.classLoader).use { classLoader ->
-            ServiceLoader.load(ArchRulesService::class.java, classLoader).forEach { service ->
+        val ownArchRulesClasses = rulesClasspath.files.map {
+            File(
+                it,
+                "META-INF/services/com.netflix.nebula.archrules.core.ArchRulesService"
+            )
+        }
+            .firstOrNull { it.exists() }
+            ?.readLines()
+            ?.filter { it.isNotBlank() && !it.startsWith("#") }
+            ?.toSet()
+            ?: emptySet()
+
+        URLClassLoader(classpathUrls, this.javaClass.classLoader).use { classLoader ->
+            ServiceLoader.load(ArchRulesService::class.java, classLoader)
+                .filter { it.javaClass.name in ownArchRulesClasses }
+                .forEach { service ->
                 val serviceClassName = service.javaClass.name
                 service.rules.forEach { (ruleName, archRule) ->
                     rules.add(

@@ -77,6 +77,7 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                 description = "Generates documentation for ArchRules"
                 group = "documentation"
                 rulesClasspath.from(archRulesSourceSet.output)
+                rulesClasspath.from(project.configurations.named(archRulesSourceSet.runtimeClasspathConfigurationName))
                 outputFile.convention(
                     project.layout.buildDirectory.file("docs/archrules.md")
                 )
