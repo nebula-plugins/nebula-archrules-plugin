@@ -55,7 +55,7 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                     archRuleServicesFile.set(
                         project.layout.buildDirectory.file(
                             "resources/archRules/META-INF/services/com.netflix.nebula.archrules.core.ArchRulesService"
-                        ).map { it.asFile }
+                        )
                     )
                     ruleSourceClasses.setFrom(archRulesSourceSet.output)
                     dependsOn(archRulesSourceSet.classesTaskName)
