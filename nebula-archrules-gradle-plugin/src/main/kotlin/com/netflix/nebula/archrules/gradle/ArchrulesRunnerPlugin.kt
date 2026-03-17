@@ -54,7 +54,6 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                 .configureEach {
                     project.configureCheckTaskForSourceSet(this, archRulesExt)
                 }
-            val checkTasks = project.tasks.withType<CheckRulesTask>()
 
             val jsonReportDependencies = project.configurations.dependencyScope("archRulesJsonReporting"){
                 project.dependencies.add(this.name, ARCHRULES_DEPENDENCY)
@@ -64,22 +63,16 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                 extendsFrom(jsonReportDependencies.get())
             }
             val jsonReportTask = project.tasks.register<PrintJsonReportTask>("archRulesJsonReport") {
-                getDataFiles().set(
-                    project.provider { (project.tasks.withType<CheckRulesTask>().flatMap { it.outputs.files }) }
-                )
+                dataFiles.from(project.tasks.withType<CheckRulesTask>())
                 getJsonReportFile().set(archRulesReportDir.map { it.file("report.json").asFile })
                 reportingClasspath.setFrom(jsonReportClasspath)
-                dependsOn(checkTasks)
                 onlyIf { archRulesExt.jsonReportEnabled.get() }
             }
 
             val consoleReportTask = project.tasks.register<PrintConsoleReportTask>("archRulesConsoleReport") {
-                dataFiles.from(
-                    project.provider { (project.tasks.withType<CheckRulesTask>().flatMap { it.outputs.files }) }
-                )
+                dataFiles.from(project.tasks.withType<CheckRulesTask>())
                 summaryForPassingDisabled.set(archRulesExt.skipPassingSummaries)
                 detailsThreshold.set(archRulesExt.consoleDetailsThreshold)
-                dependsOn(checkTasks)
                 onlyIf { archRulesExt.consoleReportEnabled.get() }
             }
 
@@ -98,16 +91,12 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
             }
 
             val enforceTask = project.tasks.register<EnforceArchRulesTask>("enforceArchRules") {
-                dependsOn(checkTasks)
-                dataFiles.set(
-                    project.provider { (project.tasks.withType<CheckRulesTask>().flatMap { it.outputs.files }) }
-                )
+                dataFiles.from(project.tasks.withType<CheckRulesTask>())
                 failureThreshold.set(archRulesExt.failureThreshold)
                 onlyIf { failureThreshold.isPresent }
             }
 
             project.tasks.named("check") {
-                dependsOn(checkTasks)
                 dependsOn(enforceTask)
                 finalizedBy(jsonReportTask, consoleReportTask)
             }

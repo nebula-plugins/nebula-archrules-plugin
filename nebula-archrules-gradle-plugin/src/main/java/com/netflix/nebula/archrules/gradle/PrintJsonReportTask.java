@@ -25,7 +25,7 @@ abstract public class PrintJsonReportTask extends DefaultTask {
      */
     @InputFiles
     @PathSensitive(PathSensitivity.RELATIVE)
-    abstract public ListProperty<File> getDataFiles();
+    abstract public ConfigurableFileCollection getDataFiles();
 
     /**
      * File to output JSON to

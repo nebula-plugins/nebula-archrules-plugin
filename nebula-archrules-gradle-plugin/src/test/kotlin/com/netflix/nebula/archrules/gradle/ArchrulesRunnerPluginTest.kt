@@ -99,7 +99,7 @@ class ArchrulesRunnerPluginTest {
             .`as`("console report inputs are correct")
             .hasSize(2)
         val jsonReport = project.tasks.named<PrintJsonReportTask>("archRulesJsonReport")
-        assertThat(jsonReport.get().dataFiles.get())
+        assertThat(jsonReport.get().dataFiles.files)
             .`as`("json report inputs are correct")
             .hasSize(2)
     }

@@ -3,11 +3,10 @@ package com.netflix.nebula.archrules.gradle;
 import com.tngtech.archunit.thirdparty.org.objectweb.asm.ClassReader;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
-import org.gradle.api.provider.Property;
+import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.tasks.*;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
@@ -16,6 +15,7 @@ import java.nio.file.StandardOpenOption;
  * Generates a file in META-INF/services to allow Rule classes to be discovered by the Runner
  */
 @CacheableTask
+@NullMarked
 abstract public class GenerateServicesRegistryTask extends DefaultTask {
     /**
      * The classes declared in the archRules source set
@@ -28,7 +28,7 @@ abstract public class GenerateServicesRegistryTask extends DefaultTask {
      * The file in META-INF/services to output to. It should be named com.netflix.nebula.archrules.core.ArchRulesService.
      */
     @OutputFile
-    abstract public Property<@NonNull File> getArchRuleServicesFile();
+    abstract public RegularFileProperty getArchRuleServicesFile();
 
     @TaskAction
     public void generate() throws IOException {
@@ -47,11 +47,11 @@ abstract public class GenerateServicesRegistryTask extends DefaultTask {
                         getLogger().warn("Failed to read class file {}", classFile.getAbsolutePath(), e);
                     }
                 });
-        if (getArchRuleServicesFile().get().exists()) {
-            getArchRuleServicesFile().get().delete();
+        if (getArchRuleServicesFile().getAsFile().get().exists()) {
+            getArchRuleServicesFile().getAsFile().get().delete();
         }
-        getArchRuleServicesFile().get().createNewFile();
+        getArchRuleServicesFile().getAsFile().get().createNewFile();
         String fileContent = String.join("\n", visitor.getArchRuleServiceClasses());
-        Files.writeString(getArchRuleServicesFile().get().toPath(), fileContent, StandardOpenOption.WRITE);
+        Files.writeString(getArchRuleServicesFile().getAsFile().get().toPath(), fileContent, StandardOpenOption.WRITE);
     }
 }

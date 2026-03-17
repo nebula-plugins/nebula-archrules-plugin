@@ -2,10 +2,9 @@ package com.netflix.nebula.archrules.gradle
 
 import com.tngtech.archunit.lang.Priority
 import org.gradle.api.DefaultTask
-import org.gradle.api.provider.ListProperty
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
-import java.io.File
 
 @CacheableTask
 abstract class EnforceArchRulesTask : DefaultTask() {
@@ -16,7 +15,7 @@ abstract class EnforceArchRulesTask : DefaultTask() {
      */
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val dataFiles: ListProperty<File>
+    abstract val dataFiles: ConfigurableFileCollection
 
     /**
      * The data files to read in. These files should container binary data representing [RuleResult]s
@@ -28,7 +27,7 @@ abstract class EnforceArchRulesTask : DefaultTask() {
 
     @TaskAction
     fun enforce() {
-        val criticalFailures = dataFiles.get()
+        val criticalFailures = dataFiles.files
             .filter { it.exists() }
             .flatMap { ViolationsUtil.readDetails(it) }
             .filter { it.status == RuleResultStatus.FAIL }
