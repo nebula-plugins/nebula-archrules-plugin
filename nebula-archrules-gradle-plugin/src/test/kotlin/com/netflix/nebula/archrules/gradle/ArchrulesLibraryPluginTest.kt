@@ -392,12 +392,14 @@ class ArchrulesLibraryPluginTest {
         assertThat(docsFile.readText())
             .contains("# ArchRules Documentation")
             .contains("List of all archrules defined in `archrules-library`.")
+            .contains("## Class: `com.example.library.DontUseArchRules`\n" +
+                "\n" +
+                "### dont use")
             .contains("## deprecated\n" +
                 "\n" +
                 "**Description:** No code should reference deprecated APIs, because usage of deprecated APIs introduces risk that future upgrades and migrations will be blocked\n" +
                 "\n" +
                 "**Priority:** HIGH")
-            .contains("## dont use")
             .contains("## kotlinDeprecated")
             .doesNotContain("## public classes should be @NullMarked")
     }
