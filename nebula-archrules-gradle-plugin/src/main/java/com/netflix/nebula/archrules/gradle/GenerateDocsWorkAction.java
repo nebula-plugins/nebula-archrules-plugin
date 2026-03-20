@@ -37,18 +37,19 @@ public abstract class GenerateDocsWorkAction implements WorkAction<GenerateDocsP
         });
 
         var output = getParameters().getOutputFile().get();
+        var libraryName = getParameters().getLibraryName().get();
         output.getParentFile().mkdirs();
         try {
-            Files.writeString(output.toPath(), formatMarkdown(rules));
+            Files.writeString(output.toPath(), formatMarkdown(rules, libraryName));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private String formatMarkdown(List<RuleMetadata> rules) {
+    private String formatMarkdown(List<RuleMetadata> rules, String libraryName) {
         var str = new StringBuilder();
         str.append("# ArchRules Documentation\n\n");
-        str.append("List of all archrules defined in this library.\n\n");
+        str.append("List of all archrules defined in `").append(libraryName).append("`.\n\n");
 
         var sortedRules = rules.stream().sorted(Comparator.comparing(r -> r.ruleName)).toList();
         sortedRules.forEach(rule -> {

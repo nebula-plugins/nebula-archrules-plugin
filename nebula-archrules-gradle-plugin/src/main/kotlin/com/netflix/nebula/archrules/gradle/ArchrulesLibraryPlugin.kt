@@ -81,6 +81,7 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                 outputFile.convention(
                     project.layout.buildDirectory.file("docs/archrules.md")
                 )
+                libraryName.convention(project.name)
                 dependsOn(generateServicesTask)
             }
             registerRuntimeFeatureForSourceSet(project, archRulesSourceSet, jarTask)
