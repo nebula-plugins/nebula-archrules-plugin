@@ -3,8 +3,10 @@ package com.netflix.nebula.archrules.gradle
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.submit
@@ -21,6 +23,9 @@ abstract class GenerateRulesDocumentationTask @Inject constructor(private val wo
 
     @get:OutputFile
     abstract val outputFile: RegularFileProperty
+
+    @get:Input
+    abstract val libraryName: Property<String>
 
     @TaskAction
     fun generateDocs() {
@@ -43,6 +48,7 @@ abstract class GenerateRulesDocumentationTask @Inject constructor(private val wo
         workQueue.submit(GenerateDocsWorkAction::class) {
             getOwnArchRulesClasses().set(ownArchRulesClasses)
             getOutputFile().set(this@GenerateRulesDocumentationTask.outputFile.get().asFile)
+            getLibraryName().set(this@GenerateRulesDocumentationTask.libraryName.get())
         }
     }
 }

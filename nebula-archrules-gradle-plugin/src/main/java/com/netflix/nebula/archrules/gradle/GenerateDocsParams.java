@@ -12,4 +12,6 @@ public interface GenerateDocsParams extends WorkParameters {
     ListProperty<String> getOwnArchRulesClasses();
 
     Property<File> getOutputFile();
+
+    Property<String> getLibraryName();
 }
