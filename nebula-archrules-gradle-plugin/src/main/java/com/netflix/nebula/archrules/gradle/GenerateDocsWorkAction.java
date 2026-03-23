@@ -12,7 +12,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.stream.Collectors;
 
 @NullMarked
 public abstract class GenerateDocsWorkAction implements WorkAction<GenerateDocsParams> {
@@ -51,14 +53,21 @@ public abstract class GenerateDocsWorkAction implements WorkAction<GenerateDocsP
         str.append("# ArchRules Documentation\n\n");
         str.append("List of all archrules defined in `").append(libraryName).append("`.\n\n");
 
-        var sortedRules = rules.stream().sorted(Comparator.comparing(r -> r.ruleName)).toList();
-        sortedRules.forEach(rule -> {
-            str.append("## ").append(rule.ruleName).append("\n\n");
-            str.append("**Description:** ").append(rule.description).append("\n\n");
-            str.append("**Priority:** ").append(rule.priority).append("\n\n");
-            str.append("**Class:** `").append(rule.ruleClass).append("`\n\n");
-            str.append("---\n\n");
-        });
+        rules.stream()
+            .collect(Collectors.groupingBy(r -> r.ruleClass))
+            .entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .forEach(entry -> {
+                str.append("## Class: `").append(entry.getKey()).append("`\n\n");
+                entry.getValue().stream()
+                    .sorted(Comparator.comparing(r -> r.ruleName))
+                    .forEach(rule -> {
+                        str.append("### ").append(rule.ruleName).append("\n\n");
+                        str.append("**Description:** ").append(rule.description).append("\n\n");
+                        str.append("**Priority:** ").append(rule.priority).append("\n\n");
+                        str.append("---\n\n");
+                    });
+            });
 
         return str.toString();
     }
