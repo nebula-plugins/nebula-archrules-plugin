@@ -33,18 +33,29 @@ internal class ViolationsUtilTest {
     }
 
     @Test
-    fun `test printSummary skipPassing`() {
+    fun `test printSummary skipPassing with failures`() {
+        val output = MockStyledTextOutput()
+        val rule = Rule("RuleClass", "RuleName", "description", Priority.MEDIUM)
+        val results = listOf(RuleResult(rule, "message", RuleResultStatus.FAIL))
+        ViolationsUtil.printSummary(mapOf(rule to results), output, true, false)
+        assertThat(output.getOutput())
+            .contains("RuleClass")
+            .contains("RuleName")
+    }
+
+    @Test
+    fun `test printSummary skipPassing no failures`() {
         val output = MockStyledTextOutput()
         val rule = Rule("RuleClass", "RuleName", "description", Priority.MEDIUM)
         val results = listOf(RuleResult(rule, "message", RuleResultStatus.PASS))
         ViolationsUtil.printSummary(mapOf(rule to results), output, true, false)
         assertThat(output.getOutput())
-            .contains("RuleClass")
+            .doesNotContain("RuleClass")
             .doesNotContain("RuleName")
     }
 
     @Test
-    fun `test printSummary skipPassing but infoLogging on`() {
+    fun `test printSummary skipPassing no failures but infoLogging on`() {
         val output = MockStyledTextOutput()
         val rule = Rule("RuleClass", "RuleName", "description", Priority.MEDIUM)
         val results = listOf(RuleResult(rule, "message", RuleResultStatus.PASS))
