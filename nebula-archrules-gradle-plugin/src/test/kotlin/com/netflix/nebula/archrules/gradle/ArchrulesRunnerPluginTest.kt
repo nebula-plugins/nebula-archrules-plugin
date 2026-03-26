@@ -393,7 +393,7 @@ archRules {
             .hasNoDeprecationWarnings()
 
         assertThat(result.output)
-            .contains("com.netflix.nebula.archrules.deprecation.DeprecationRule")
+            .doesNotContain("com.netflix.nebula.archrules.deprecation.DeprecationRule")
             .doesNotContain(LOW_PASSING_SUMMARY)
     }
 

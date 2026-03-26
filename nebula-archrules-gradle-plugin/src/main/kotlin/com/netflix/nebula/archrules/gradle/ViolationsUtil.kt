@@ -37,11 +37,11 @@ class ViolationsUtil {
         }
 
         @JvmStatic
-        fun writeDetails(dataFile: File, violationList : List<RuleResult>) {
+        fun writeDetails(dataFile: File, violationList: List<RuleResult>) {
             ObjectOutputStream(FileOutputStream(dataFile)).use { out ->
                 out.writeInt(violationList.size)
                 violationList.forEach {
-                    out.writeObject(it);
+                    out.writeObject(it)
                 }
             }
         }
@@ -88,30 +88,34 @@ class ViolationsUtil {
             val maxRuleNameLength = resultMap.keys.maxOfOrNull { it.ruleName().length } ?: 1
             resultMap.entries.groupBy { entry -> entry.key.ruleClass() }
                 .forEach { (ruleClass, classMap) ->
-                    output.style(StyledTextOutput.Style.Header).println(ruleClass)
-                    classMap.forEach { (rule, results) ->
-                        val failures = results.filter { it.status() != RuleResultStatus.PASS }
-                        if (failures.isEmpty()) {
-                            if (!skipPassing || infoLogging) {
-                                output.style(StyledTextOutput.Style.Success)
+                    val classHasFailures = classMap.flatMap { it.value }.any { it.status != RuleResultStatus.PASS }
+                    val shouldClassPrint = !skipPassing || infoLogging || classHasFailures
+                    if (shouldClassPrint) {
+                        output.style(StyledTextOutput.Style.Header).println(ruleClass)
+                        classMap.forEach { (rule, results) ->
+                            val failures = results.filter { it.status() != RuleResultStatus.PASS }
+                            if (failures.isEmpty()) {
+                                if (!skipPassing || infoLogging) {
+                                    output.style(StyledTextOutput.Style.Success)
+                                        .text(" ".repeat(indent))
+                                        .text(rule.ruleName().padEnd(maxRuleNameLength + 1))
+                                        .text(" ")
+                                        .text(rule.priority().asString().padEnd(10))
+                                        .println(" (No failures)")
+                                }
+                            } else {
+                                val style = when (rule.priority()) {
+                                    Priority.LOW -> StyledTextOutput.Style.Normal
+                                    Priority.MEDIUM -> StyledTextOutput.Style.Info
+                                    Priority.HIGH -> StyledTextOutput.Style.Failure
+                                }
+                                output.style(style)
                                     .text(" ".repeat(indent))
                                     .text(rule.ruleName().padEnd(maxRuleNameLength + 1))
                                     .text(" ")
                                     .text(rule.priority().asString().padEnd(10))
-                                    .println(" (No failures)")
+                                    .println(" (" + failures.size + " failures)")
                             }
-                        } else {
-                            val style = when (rule.priority()) {
-                                Priority.LOW -> StyledTextOutput.Style.Normal
-                                Priority.MEDIUM -> StyledTextOutput.Style.Info
-                                Priority.HIGH -> StyledTextOutput.Style.Failure
-                            }
-                            output.style(style)
-                                .text(" ".repeat(indent))
-                                .text(rule.ruleName().padEnd(maxRuleNameLength + 1))
-                                .text(" ")
-                                .text(rule.priority().asString().padEnd(10))
-                                .println(" (" + failures.size + " failures)")
                         }
                     }
                 }
