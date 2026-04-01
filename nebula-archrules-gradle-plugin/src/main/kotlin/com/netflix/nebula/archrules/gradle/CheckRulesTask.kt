@@ -34,6 +34,12 @@ abstract class CheckRulesTask @Inject constructor(private val workerExecutor: Wo
     abstract val priorityOverridesByClass: MapProperty<String, Priority>
 
     @get:Input
+    abstract val includedRules: ListProperty<String>
+
+    @get:Input
+    abstract val includedRuleClasses: ListProperty<String>
+
+    @get:Input
     abstract val excludedRules: ListProperty<String>
 
     @get:Input
@@ -51,6 +57,8 @@ abstract class CheckRulesTask @Inject constructor(private val workerExecutor: Wo
             getPriorityOverridesByClass().set(this@CheckRulesTask.priorityOverridesByClass)
             getExcludedRules().set(this@CheckRulesTask.excludedRules)
             getExcludedRuleClasses().set(this@CheckRulesTask.excludedRuleClasses)
+            getIncludedRules().set(this@CheckRulesTask.includedRules)
+            getIncludedRuleClasses().set(this@CheckRulesTask.includedRuleClasses)
         }
     }
 }

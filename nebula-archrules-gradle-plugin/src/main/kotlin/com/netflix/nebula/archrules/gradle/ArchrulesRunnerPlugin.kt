@@ -141,6 +141,16 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                     it.filter { it.value.sourceSetsToSkip.contains(sourceSet.name) }.map { it.key }
                 }
             )
+            includedRules.set(
+                project.providers.gradleProperty("ruleName")
+                    .map { it.split(",") }
+                    .orElse(emptyList())
+            )
+            includedRuleClasses.set(
+                project.providers.gradleProperty("ruleClass")
+                    .map { it.split(",") }
+                    .orElse(emptyList())
+            )
             dataFile.set(archRulesReportDir.map {
                 it.file(sourceSet.name + ".data").asFile
             })

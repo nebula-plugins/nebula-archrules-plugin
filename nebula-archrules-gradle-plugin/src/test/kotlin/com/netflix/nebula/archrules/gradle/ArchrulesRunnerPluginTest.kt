@@ -631,6 +631,50 @@ archRules {
     }
 
     @Test
+    fun `ruleName level source set includes`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                dependencies("""archRules("com.netflix.nebula:archrules-nullability:0.+")""")
+            }
+        }
+
+        val result = runner.run("archRulesConsoleReport", "-PruleName=no Optional class fields,deprecated", "--stacktrace")
+        assertThat(result.task(":checkArchRulesMain")).hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        val results = readDetails(mainReport)
+
+        val deprecatedResults = results.filter { it.rule.ruleName.equals("deprecated") }
+        assertThat(deprecatedResults).hasSize(2)
+
+        val deprecatedForRemovalResults = results.filter { it.rule.ruleName.equals("deprecatedForRemoval") }
+        assertThat(deprecatedForRemovalResults).isEmpty()
+
+        val optionalResults = results.filter { it.rule.ruleName.equals("no Optional class fields") }
+        assertThat(optionalResults).hasSize(1)
+    }
+
+    @Test
+    fun `ruleClass level source set includes`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                dependencies("""archRules("com.netflix.nebula:archrules-nullability:0.+")""")
+            }
+        }
+
+        val result = runner.run("archRulesConsoleReport", "-PruleClass=com.netflix.nebula.archrules.nullability", "--stacktrace")
+        assertThat(result.task(":checkArchRulesMain")).hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        val results = readDetails(mainReport)
+
+        assertThat(results).isNotEmpty()
+        results.forEach { result ->
+            assertThat(result.rule.ruleClass()).startsWith("com.netflix.nebula.archrules.nullability")
+        }
+    }
+
+    @Test
     fun `invalid priority string logs warning and does not override`() {
         val runner = testProject(projectDir) {
             setupConsumerProject {

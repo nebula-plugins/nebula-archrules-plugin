@@ -20,6 +20,10 @@ public interface RunRulesParams extends WorkParameters {
 
     MapProperty<String, Priority> getPriorityOverridesByClass();
 
+    ListProperty<String> getIncludedRules();
+
+    ListProperty<String> getIncludedRuleClasses();
+
     ListProperty<String> getExcludedRules();
 
     ListProperty<String> getExcludedRuleClasses();
