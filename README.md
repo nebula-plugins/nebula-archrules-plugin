@@ -148,6 +148,17 @@ dependencies {
 }
 ```
 
+#### Running specific rules
+If you would like to only run certain rules or rule classes on the CLI, you can add the following flag.
+(Note: these rules still must be on the classpath and not excluded.)
+```commandline
+./gradlew archRulesConsoleReport -PruleName="no Optional class fields,deprecated"
+```
+or
+```commandline
+./gradlew archRulesConsoleReport -PruleClass="com.netflix.nebula.archrules.nullability"
+```
+
 #### Overriding rule priority
 
 You can override the default priority of a rule using the `ruleClass` or `ruleName` and `priority` as `LOW`, `MEDIUM`, or `HIGH`:
