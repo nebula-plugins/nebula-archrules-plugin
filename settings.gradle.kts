@@ -3,17 +3,11 @@ pluginManagement {
         id("com.netflix.nebula.root") version ("25.+")
         id("com.netflix.nebula.plugin-plugin") version ("25.+")
         id("com.netflix.nebula.library") version ("25.+")
+        id("com.netflix.nebula.oss.settings") version("25.+")
     }
 }
 plugins {
-    id("com.gradle.develocity") version("4.2")
-}
-
-develocity {
-    buildScan {
-        termsOfUseUrl = "https://gradle.com/terms-of-service"
-        termsOfUseAgree = "yes"
-    }
+    id("com.netflix.nebula.oss.settings")
 }
 
 rootProject.name = "nebula-archrules-plugin"

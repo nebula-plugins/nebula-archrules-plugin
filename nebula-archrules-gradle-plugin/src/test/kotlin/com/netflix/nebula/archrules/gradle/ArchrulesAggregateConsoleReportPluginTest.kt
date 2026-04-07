@@ -90,7 +90,7 @@ class ArchrulesAggregateConsoleReportPluginTest {
     fun `settings defaults`() {
         val project = ProjectBuilder.builder().build()
         project.plugins.apply("java")
-        project.plugins.apply(ArchrulesAggregateConsoleReportPlugin::class.java)
+        project.plugins.apply("com.netflix.nebula.archrules.aggregate")
         val extension = project.extensions.findByType<ArchrulesAggregateExtension>()!!
         assertThat(extension.skipPassingSummaries.get()).isFalse()
         assertThat(extension.consoleDetailsThreshold.get()).isEqualTo(Priority.MEDIUM)
@@ -178,5 +178,28 @@ artifacts {
         assertThat(result.task(":archRulesAggregateConsoleReport"))
             .hasOutcome(TaskOutcome.SUCCESS)
         assertThat(result.output).doesNotContain("Archrules data read failed")
+    }
+
+    @Test
+    fun test_nested_subproject() {
+        val runner = testProject(projectDir) {
+            setup()
+            subProject(":group:nested") {
+                plugins {
+                    id("java")
+                    id("com.netflix.nebula.archrules.runner")
+                }
+                repositories {
+                    mavenCentral()
+                }
+                dependencies(
+                    """implementation(project(":library"))""",
+                    """archRules("com.netflix.nebula:archrules-deprecation:0.+")"""
+                )
+            }
+        }
+        val result = runner.run("archRulesAggregateConsoleReport")
+        assertThat(result.task(":archRulesAggregateConsoleReport"))
+            .hasOutcome(TaskOutcome.SUCCESS)
     }
 }
