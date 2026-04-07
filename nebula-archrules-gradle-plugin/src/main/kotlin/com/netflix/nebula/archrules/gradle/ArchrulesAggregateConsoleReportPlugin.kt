@@ -32,7 +32,7 @@ class ArchrulesAggregateConsoleReportPlugin @Inject constructor(val objects: Obj
         }
 
         project.subprojects {
-            project.dependencies.add("archRulesAggregateDependencies", project.dependencies.project(":$name"))
+            project.dependencies.add("archRulesAggregateDependencies", project.dependencies.project(path))
         }
 
         project.tasks.register<PrintConsoleReportTask>("archRulesAggregateConsoleReport") {
