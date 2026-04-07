@@ -55,17 +55,13 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                     project.configureCheckTaskForSourceSet(this, archRulesExt)
                 }
 
-            val jsonReportDependencies = project.configurations.dependencyScope("archRulesJsonReporting"){
-                project.dependencies.add(this.name, ARCHRULES_DEPENDENCY)
-                project.dependencies.add(this.name, JACKSON_DEPENDENCY)
-            }
-            val jsonReportClasspath = project.configurations.resolvable("archRulesJsonReportingResolved"){
-                extendsFrom(jsonReportDependencies.get())
-            }
             val jsonReportTask = project.tasks.register<PrintJsonReportTask>("archRulesJsonReport") {
                 dataFiles.from(project.tasks.withType<CheckRulesTask>())
                 getJsonReportFile().set(archRulesReportDir.map { it.file("report.json").asFile })
-                reportingClasspath.setFrom(jsonReportClasspath)
+                reportingClasspath.setFrom(project.configurations.detachedConfiguration(
+                    project.dependencies.create(ARCHRULES_DEPENDENCY),
+                    project.dependencies.create(JACKSON_DEPENDENCY)
+                ))
                 onlyIf { archRulesExt.jsonReportEnabled.get() }
             }
 
