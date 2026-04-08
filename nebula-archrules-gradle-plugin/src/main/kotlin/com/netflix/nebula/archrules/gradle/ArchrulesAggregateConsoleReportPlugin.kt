@@ -20,25 +20,20 @@ class ArchrulesAggregateConsoleReportPlugin @Inject constructor(val objects: Obj
         val ext = project.extensions.create("archRulesAggregate", ArchrulesAggregateExtension::class.java)
         ext.skipPassingSummaries.set(false)
         ext.consoleDetailsThreshold(Priority.MEDIUM)
-        val archRulesAggregateDependencies = project.configurations.dependencyScope("archRulesAggregateDependencies") {
-            description = "projects to collect archrules data from"
-        }
-        val archRulesDataFiles = project.configurations.resolvable("archRulesDataFiles") {
-            extendsFrom(archRulesAggregateDependencies.get())
-            attributes {
-                attribute(Category.CATEGORY_ATTRIBUTE, verification)
-                attribute(VerificationType.VERIFICATION_TYPE_ATTRIBUTE, archRulesVerificationType)
-            }
-        }
 
-        project.subprojects {
-            project.dependencies.add("archRulesAggregateDependencies", project.dependencies.project(path))
-        }
+        val archRulesDataFiles = project.configurations.detachedConfiguration(
+            *project.subprojects.map { project.dependencies.project(it.path) }.toTypedArray()
+        ).apply { description = "projects to collect archrules data from" }
 
         project.tasks.register<PrintConsoleReportTask>("archRulesAggregateConsoleReport") {
-            dataFiles.from(archRulesDataFiles.flatMap {
-                it.incoming.artifactView {
+            dataFiles.from(
+                archRulesDataFiles.incoming.artifactView {
+                    withVariantReselection()
                     lenient(true) // to handle the case where a subproject doesn't have archrules runner
+                    attributes {
+                        attribute(Category.CATEGORY_ATTRIBUTE, verification)
+                        attribute(VerificationType.VERIFICATION_TYPE_ATTRIBUTE, archRulesVerificationType)
+                    }
                 }.artifacts.resolvedArtifacts.map {
                     // filter for only artifacts that match the attributes
                     it.filter {
@@ -47,7 +42,7 @@ class ArchrulesAggregateConsoleReportPlugin @Inject constructor(val objects: Obj
                         it.file
                     }
                 }
-            })
+            )
             summaryForPassingDisabled.set(ext.skipPassingSummaries)
             detailsThreshold.set(ext.consoleDetailsThreshold)
         }
