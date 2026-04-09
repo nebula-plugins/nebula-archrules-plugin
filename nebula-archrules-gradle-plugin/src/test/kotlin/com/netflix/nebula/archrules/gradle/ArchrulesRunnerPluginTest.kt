@@ -638,20 +638,13 @@ archRules {
             }
         }
 
-        val result = runner.run("archRulesConsoleReport", "-PruleName=no Optional class fields,deprecated", "--stacktrace")
+        val result = runner.run("archRulesConsoleReport", "--rule-name=no Optional class fields", "--rule-name=deprecated", "--stacktrace")
         assertThat(result.task(":checkArchRulesMain")).hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
-        val results = readDetails(mainReport)
-
-        val deprecatedResults = results.filter { it.rule.ruleName.equals("deprecated") }
-        assertThat(deprecatedResults).hasSize(2)
-
-        val deprecatedForRemovalResults = results.filter { it.rule.ruleName.equals("deprecatedForRemoval") }
-        assertThat(deprecatedForRemovalResults).isEmpty()
-
-        val optionalResults = results.filter { it.rule.ruleName.equals("no Optional class fields") }
-        assertThat(optionalResults).hasSize(1)
+        assertThat(result.output)
+            .contains("deprecated")
+            .contains("no Optional class fields")
+            .doesNotContain("deprecatedForRemoval")
     }
 
     @Test
@@ -662,16 +655,20 @@ archRules {
             }
         }
 
-        val result = runner.run("archRulesConsoleReport", "-PruleClass=com.netflix.nebula.archrules.nullability", "--stacktrace")
+        val result = runner.run("archRulesConsoleReport", "--rule-class=com.netflix.nebula.archrules.nullability", "--stacktrace")
         assertThat(result.task(":checkArchRulesMain")).hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
         val mainReport = projectDir.resolve("build/reports/archrules/main.data")
-        val results = readDetails(mainReport)
+        val nullabilityRuleNames = readDetails(mainReport)
+            .filter { it.rule.ruleClass().startsWith("com.netflix.nebula.archrules.nullability") }
+            .map { it.rule.ruleName() }
+            .distinct()
 
-        assertThat(results).isNotEmpty()
-        results.forEach { result ->
-            assertThat(result.rule.ruleClass()).startsWith("com.netflix.nebula.archrules.nullability")
+        assertThat(nullabilityRuleNames).isNotEmpty()
+        nullabilityRuleNames.forEach { ruleName ->
+            assertThat(result.output).contains(ruleName)
         }
+        assertThat(result.output).doesNotContain("com.netflix.nebula.archrules.deprecation")
     }
 
     @Test

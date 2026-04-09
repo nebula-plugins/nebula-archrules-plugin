@@ -69,18 +69,16 @@ public abstract class RunRulesWorkAction implements WorkAction<RunRulesParams> {
         final var classesToCheck = new ClassFileImporterWithPackage()
                 .importPaths(getParameters().getClassesToCheck().getFiles().stream().map(File::toPath).toList());
         final List<RuleResult> violationList = new ArrayList<>();
-        List<String> includedRules = getParameters().getIncludedRules().get();
-        List<String> includedRuleClasses = getParameters().getIncludedRuleClasses().get();
 
         ruleClasses.forEach(ruleClass -> {
             String ruleClassName = ruleClass.getClass().getCanonicalName();
             if (isRuleClassExcluded(ruleClassName)) {
                 LOGGER.info("Rule class {} has been excluded for this source set", ruleClass.getClass().getName());
-            } else if(includedRuleClasses.isEmpty() || includedRuleClasses.stream().anyMatch(ruleClassName::startsWith)) {
+            } else {
                 ruleClass.getRules().forEach((id, archRule) -> {
                     if (getParameters().getExcludedRules().get().contains(id)) {
                         LOGGER.info("Rule {} has been excluded for this source set", id);
-                    } else if (includedRules.isEmpty() || includedRules.contains(id)){
+                    } else {
                         final var result = Runner.check(archRule, classesToCheck);
 
                         // check if there is priority override by class first
