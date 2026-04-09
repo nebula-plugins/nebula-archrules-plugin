@@ -57,8 +57,12 @@ abstract class PrintConsoleReportTask : DefaultTask() {
         val list = dataFiles.files
             .filter(File::exists)
             .flatMap { ViolationsUtil.readDetails(it) }
-            .filter { filteredRules.isEmpty() || filteredRules.contains(it.rule().ruleName()) }
-            .filter { filteredRuleClasses.isEmpty() || filteredRuleClasses.any { prefix -> it.rule().ruleClass().startsWith(prefix) } }
+            .filter {
+                val noFilters = filteredRules.isEmpty() && filteredRuleClasses.isEmpty()
+                val matchesRule = filteredRules.contains(it.rule().ruleName())
+                val matchesClass = filteredRuleClasses.any { prefix -> it.rule().ruleClass().startsWith(prefix) }
+                noFilters || matchesRule || matchesClass
+            }
             .toList()
         val byRule = ViolationsUtil.consolidatedFailures(list)
         ViolationsUtil.printSummary(byRule, consoleOutput, summaryForPassingDisabled.get(), logger.isInfoEnabled)

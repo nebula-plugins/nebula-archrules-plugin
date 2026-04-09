@@ -651,11 +651,14 @@ archRules {
     fun `ruleClass level source set includes`() {
         val runner = testProject(projectDir) {
             setupConsumerProject {
-                dependencies("""archRules("com.netflix.nebula:archrules-nullability:0.+")""")
+                dependencies("""
+                    archRules("com.netflix.nebula:archrules-nullability:0.+")
+                    archRules("com.netflix.nebula:archrules-joda:0.+")
+                """)
             }
         }
 
-        val result = runner.run("archRulesConsoleReport", "--rule-class=com.netflix.nebula.archrules.nullability", "--stacktrace")
+        val result = runner.run("archRulesConsoleReport", "--rule-class=com.netflix.nebula.archrules.nullability", "--rule-name=jodaRule", "--stacktrace")
         assertThat(result.task(":checkArchRulesMain")).hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
         val mainReport = projectDir.resolve("build/reports/archrules/main.data")
@@ -668,6 +671,7 @@ archRules {
         nullabilityRuleNames.forEach { ruleName ->
             assertThat(result.output).contains(ruleName)
         }
+        assertThat(result.output).contains("jodaRule")
         assertThat(result.output).doesNotContain("com.netflix.nebula.archrules.deprecation")
     }
 
