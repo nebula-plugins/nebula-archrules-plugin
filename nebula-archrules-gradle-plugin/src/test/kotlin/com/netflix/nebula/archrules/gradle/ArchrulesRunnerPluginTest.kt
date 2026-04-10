@@ -631,6 +631,51 @@ archRules {
     }
 
     @Test
+    fun `ruleName level source set includes`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                dependencies("""archRules("com.netflix.nebula:archrules-nullability:0.+")""")
+            }
+        }
+
+        val result = runner.run("archRulesConsoleReport", "--rule-name=no Optional class fields", "--rule-name=deprecated", "--stacktrace")
+        assertThat(result.task(":checkArchRulesMain")).hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        assertThat(result.output)
+            .contains("deprecated")
+            .contains("no Optional class fields")
+            .doesNotContain("deprecatedForRemoval")
+    }
+
+    @Test
+    fun `ruleClass level source set includes`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                dependencies("""
+                    archRules("com.netflix.nebula:archrules-nullability:0.+")
+                    archRules("com.netflix.nebula:archrules-joda:0.+")
+                """)
+            }
+        }
+
+        val result = runner.run("archRulesConsoleReport", "--rule-class=com.netflix.nebula.archrules.nullability", "--rule-name=jodaRule", "--stacktrace")
+        assertThat(result.task(":checkArchRulesMain")).hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        val nullabilityRuleNames = readDetails(mainReport)
+            .filter { it.rule.ruleClass().startsWith("com.netflix.nebula.archrules.nullability") }
+            .map { it.rule.ruleName() }
+            .distinct()
+
+        assertThat(nullabilityRuleNames).isNotEmpty()
+        nullabilityRuleNames.forEach { ruleName ->
+            assertThat(result.output).contains(ruleName)
+        }
+        assertThat(result.output).contains("jodaRule")
+        assertThat(result.output).doesNotContain("com.netflix.nebula.archrules.deprecation")
+    }
+
+    @Test
     fun `invalid priority string logs warning and does not override`() {
         val runner = testProject(projectDir) {
             setupConsumerProject {

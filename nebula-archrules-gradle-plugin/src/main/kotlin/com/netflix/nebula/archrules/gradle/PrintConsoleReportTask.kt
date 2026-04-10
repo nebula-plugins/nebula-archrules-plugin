@@ -3,9 +3,9 @@ package com.netflix.nebula.archrules.gradle
 import com.tngtech.archunit.lang.Priority
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
+import org.gradle.api.tasks.options.Option
 import org.gradle.internal.logging.text.StyledTextOutput
 import org.gradle.internal.logging.text.StyledTextOutputFactory
 import org.gradle.kotlin.dsl.support.get
@@ -38,12 +38,31 @@ abstract class PrintConsoleReportTask : DefaultTask() {
     @get:Optional
     abstract val detailsThreshold: Property<Priority>
 
+    private var filteredRules: List<String> = emptyList()
+    private var filteredRuleClasses: List<String> = emptyList()
+
+    @Option(option = "rule-name", description = "Print only results for the specified rule name(s). Can be specified multiple times.")
+    fun filterByRuleName(rules: List<String>) {
+        filteredRules = rules
+    }
+
+    @Option(option = "rule-class", description = "Print only results for rule classes matching the specified prefix(es). Can be specified multiple times.")
+    fun filterByRuleClass(ruleClasses: List<String>) {
+        filteredRuleClasses = ruleClasses
+    }
+
     @TaskAction
     fun printReport() {
         val consoleOutput = services.get<StyledTextOutputFactory>().create("archrules")
         val list = dataFiles.files
             .filter(File::exists)
             .flatMap { ViolationsUtil.readDetails(it) }
+            .filter {
+                val noFilters = filteredRules.isEmpty() && filteredRuleClasses.isEmpty()
+                val matchesRule = filteredRules.contains(it.rule().ruleName())
+                val matchesClass = filteredRuleClasses.any { prefix -> it.rule().ruleClass().startsWith(prefix) }
+                noFilters || matchesRule || matchesClass
+            }
             .toList()
         val byRule = ViolationsUtil.consolidatedFailures(list)
         ViolationsUtil.printSummary(byRule, consoleOutput, summaryForPassingDisabled.get(), logger.isInfoEnabled)

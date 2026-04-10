@@ -237,6 +237,13 @@ archRulesAggregate {
 }
 ```
 
+#### Filtering specific rules
+If you would like to only display certain rules or rule classes on the CLI, you can use the following flags.
+(Note: these rules must still be on the classpath and not excluded.)
+```commandline
+./gradlew archRulesConsoleReport --rule-name=deprecated --rule-class=com.netflix.nebula.archrules.nullability
+```
+
 ## How it works
 
 The Archrules Library plugin produces a separate Jar for the `archRules` sourceset, which is exposed as an alternate variant of the library. It also will automatically generate a `META-INF/services` file which contains a reference for each implementation of `com.netflix.nebula.archrules.core.ArchRulesService` to declare it as a service provider.
