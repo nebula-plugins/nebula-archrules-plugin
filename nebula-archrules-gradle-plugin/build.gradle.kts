@@ -94,3 +94,8 @@ configurations.named("mainArchRulesRuntime").configure {
         }
     }
 }
+archRules {
+    ruleName("javaxRule") {
+        priority("LOW") // Gradle still requires use of javax Inject
+    }
+}

@@ -3,7 +3,7 @@ plugins {
 }
 description = "Core library for authoring and running Nebula ArchRules"
 dependencies {
-    api("com.tngtech.archunit:archunit:1.4.1")
+    api("com.tngtech.archunit:archunit:1.4.2")
     testImplementation("org.assertj:assertj-core:3.27.6")
 }
 testing {
