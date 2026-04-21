@@ -2,7 +2,8 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 com.netflix.nebula:archrules-deprecation:0.1.2=archRules
-com.tngtech.archunit:archunit:1.4.1=archRules,compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.tngtech.archunit:archunit:1.4.1=archRules
+com.tngtech.archunit:archunit:1.4.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 net.bytebuddy:byte-buddy:1.17.7=testCompileClasspath,testRuntimeClasspath
 org.apiguardian:apiguardian-api:1.1.2=testCompileClasspath
 org.assertj:assertj-core:3.27.6=testCompileClasspath,testRuntimeClasspath

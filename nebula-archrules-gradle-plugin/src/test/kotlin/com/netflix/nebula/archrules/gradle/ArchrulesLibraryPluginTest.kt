@@ -18,7 +18,7 @@ class ArchrulesLibraryPluginTest {
     fun `plugin registers library dependency`() {
         val project = ProjectBuilder.builder().build()
         project.plugins.apply("java")
-        project.plugins.apply(ArchrulesLibraryPlugin::class.java)
+        project.plugins.apply("com.netflix.nebula.archrules.library")
         val configuration = project.configurations.findByName("archRulesImplementation")
         assertThat(configuration).isNotNull
         val coreLibrary = configuration!!.dependencies
