@@ -199,11 +199,12 @@ Any rules which fail with that priority or higher will cause the build to fail. 
 
 ## Reporting
 
-The plugin can generate JSON and console reports. Both are enabled by default. Either one can be disabled:
+The plugin can generate JSON, markdown, and console reports. All are enabled by default. Each can be disabled:
 ```kotlin
 archRules {
     consoleReportEnabled = false
     jsonReportEnabled = false
+    markdownReportEnabled = false
 }
 ```
 
