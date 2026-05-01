@@ -18,6 +18,11 @@ abstract class ArchrulesExtension {
     abstract val jsonReportEnabled: Property<Boolean>
 
     /**
+     * set to false to disable the markdown report
+     */
+    abstract val markdownReportEnabled: Property<Boolean>
+
+    /**
      * Skip printing lines in the console report summary for passing rules
      */
     abstract val skipPassingSummaries: Property<Boolean>

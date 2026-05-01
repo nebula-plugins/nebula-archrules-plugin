@@ -46,6 +46,7 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
             val archRulesExt = project.extensions.create<ArchrulesExtension>("archRules")
             archRulesExt.consoleReportEnabled.convention(true)
             archRulesExt.jsonReportEnabled.convention(true)
+            archRulesExt.markdownReportEnabled.convention(true)
             archRulesExt.skipPassingSummaries.convention(false)
             archRulesExt.sourceSetsToSkip.add("archRulesTest")
             archRulesExt.consoleDetailsThreshold.convention(Priority.MEDIUM)
@@ -71,6 +72,12 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                 onlyIf { archRulesExt.consoleReportEnabled.get() }
             }
 
+            val markdownReportTask = project.tasks.register<PrintMarkdownReportTask>("archRulesMarkdownReport") {
+                dataFiles.from(project.tasks.withType<CheckRulesTask>())
+                markdownReportFile.set(archRulesReportDir.map { it.file("report.md").asFile })
+                onlyIf { archRulesExt.markdownReportEnabled.get() }
+            }
+
             project.configurations.consumable("archRulesReportElements") {
                 description = "Report data for ArchRules"
                 outgoing.artifacts(
@@ -93,7 +100,7 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
 
             project.tasks.named("check") {
                 dependsOn(enforceTask)
-                finalizedBy(jsonReportTask, consoleReportTask)
+                finalizedBy(jsonReportTask, markdownReportTask, consoleReportTask)
             }
         }
     }

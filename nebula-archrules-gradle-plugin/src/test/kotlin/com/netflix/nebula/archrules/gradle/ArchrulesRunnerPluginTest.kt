@@ -142,6 +142,10 @@ class ArchrulesRunnerPluginTest {
             .`as`("archRules json report runs by default")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
+        assertThat(result.task(":archRulesMarkdownReport"))
+            .`as`("archRules markdown report runs by default")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
         assertThat(result.task(":archRulesConsoleReport"))
             .`as`("archRules console report runs by default")
             .hasOutcome(TaskOutcome.SUCCESS)
@@ -170,6 +174,11 @@ class ArchrulesRunnerPluginTest {
         val jsonReport = projectDir.resolve("build/reports/archrules/report.json")
         assertThat(jsonReport)
             .`as`("json report created")
+            .exists()
+
+        val markdownReport = projectDir.resolve("build/reports/archrules/report.md")
+        assertThat(markdownReport)
+            .`as`("markdown report is created")
             .exists()
 
         assertThat(result.output)
@@ -299,6 +308,37 @@ archRules {
             .`as`("json report is not created")
             .doesNotExist()
     }
+
+    @Test
+    fun `markdown report can be disabled`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject(setupSources = false) {
+                rawBuildScript(
+                    """
+archRules {
+    markdownReportEnabled = false
+}
+"""
+                )
+            }
+        }
+
+        val result = runner.run("check", "--stacktrace", "-x", "test")
+
+        assertThat(result.task(":archRulesMarkdownReport"))
+            .`as`("markdown report task is skipped")
+            .hasOutcome(TaskOutcome.SKIPPED)
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+
+        val markdownReport = projectDir.resolve("build/reports/archrules/report.md")
+        assertThat(markdownReport)
+            .`as`("markdown report is not created")
+            .doesNotExist()
+    }
+
 
     @ParameterizedTest
     @EnumSource(SupportedGradleVersion::class)
