@@ -1,5 +1,6 @@
 package com.netflix.nebula.archrules.gradle
 
+import com.netflix.nebula.archrules.gradle.report.FailuresByRuleBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -42,6 +43,19 @@ class ViolationsUtil {
                     out.writeObject(it)
                 }
             }
+        }
+
+        @Deprecated(
+            level = DeprecationLevel.ERROR,
+            replaceWith = ReplaceWith(
+                "FailuresByRuleBuilder.build(violations)",
+                "com.netflix.nebula.archrules.gradle.report.FailuresByRuleBuilder"
+            ),
+            message = "This helper method has been replaced by the FailuresByRule class"
+        )
+        @JvmStatic
+        fun consolidatedFailures(violations: List<RuleResult>): Map<Rule, List<RuleResult>> {
+            return FailuresByRuleBuilder.build(violations)
         }
     }
 }
