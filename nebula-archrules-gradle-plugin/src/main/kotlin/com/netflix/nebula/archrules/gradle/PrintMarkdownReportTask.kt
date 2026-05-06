@@ -4,8 +4,11 @@ import com.netflix.nebula.archrules.gradle.report.MarkdownReportPrinter
 import com.tngtech.archunit.lang.Priority
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -29,11 +32,18 @@ abstract class PrintMarkdownReportTask : DefaultTask() {
     abstract val dataFiles: ConfigurableFileCollection
 
     /**
+     * the priority threshold for printing failure details
+     */
+    @get:Input
+    @get:Optional
+    abstract val detailsThreshold: Property<Priority>
+
+    /**
      * File to output markdown to
      * @return file for output
      */
     @get:OutputFile
-    abstract val markdownReportFile: Property<File>
+    abstract val markdownReportFile: RegularFileProperty
 
     private var filteredRules: List<String> = emptyList()
     private var filteredRuleClasses: List<String> = emptyList()
@@ -66,10 +76,10 @@ abstract class PrintMarkdownReportTask : DefaultTask() {
                 noFilters || matchesRule || matchesClass
             }
             .toList()
-        markdownReportFile.get().outputStream().use {
+        markdownReportFile.get().asFile.outputStream().use {
             MarkdownReportPrinter(it)
-                .print(list, false, true, detailsThreshold = Priority.LOW)
+                .print(list, false, true, detailsThreshold.orNull)
         }
-        logger.lifecycle("ArchRules markdown report is available at: " + markdownReportFile.get().toURI())
+        logger.lifecycle("ArchRules markdown report is available at: " + markdownReportFile.get().asFile.toURI())
     }
 }

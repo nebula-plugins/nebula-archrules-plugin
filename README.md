@@ -3,7 +3,7 @@
 [ArchUnit](https://www.archunit.org/) a popular OSS library used to enforce “architectural” code rules as part of a
 JUnit suite. However, it is limited by its design to be used as part of a JUnit suite in a single repository. Nebula
 ArchRules is a toolkit which gives organizations the ability to share and apply rules across any number of repositories.
-Rules can be sourced from OSS libraries or private internal libraries.
+Rules can be sourced from OSS libraries or private internal libraries. You can find some example rule libraries at [nebula-archrules](https://github.com/nebula-plugins/nebula-archrules).
 
 ## Current Versions
 

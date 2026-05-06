@@ -41,9 +41,9 @@ gradlePlugin {
         }
         create("aggregate") {
             id = "com.netflix.nebula.archrules.aggregate"
-            implementationClass = "com.netflix.nebula.archrules.gradle.ArchrulesAggregateConsoleReportPlugin"
-            displayName = "ArchRules Aggregate Console Report Plugin"
-            description = "Consolidates console reports for multiple subprojects"
+            implementationClass = "com.netflix.nebula.archrules.gradle.ArchrulesAggregateReportPlugin"
+            displayName = "ArchRules Aggregate Report Plugin"
+            description = "Consolidates reports for multiple subprojects"
             tags.addAll("nebula", "archunit")
             compatibility {
                 features {
