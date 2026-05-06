@@ -3,6 +3,7 @@ package com.netflix.nebula.archrules.gradle
 import com.tngtech.archunit.lang.Priority
 import nebula.test.dsl.TestKitAssertions.assertThat
 import nebula.test.dsl.TestProjectBuilder
+import nebula.test.dsl.TestProjectRunner
 import nebula.test.dsl.main
 import nebula.test.dsl.plugins
 import nebula.test.dsl.properties
@@ -14,9 +15,11 @@ import nebula.test.dsl.src
 import nebula.test.dsl.subProject
 import nebula.test.dsl.test
 import nebula.test.dsl.testProject
+import nebula.test.dsl.withGradle
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.named
 import org.gradle.testfixtures.ProjectBuilder
+import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -84,7 +87,7 @@ class ArchrulesRunnerPluginTest {
     fun `plugin registers archRules configuration`() {
         val project = ProjectBuilder.builder().build()
         project.plugins.apply("java")
-        project.plugins.apply(ArchrulesRunnerPlugin::class.java)
+        project.plugins.apply("com.netflix.nebula.archrules.runner")
         val configuration = project.configurations.findByName("archRules")
         assertThat(configuration).isNotNull
     }
@@ -93,7 +96,7 @@ class ArchrulesRunnerPluginTest {
     fun `report inputs are correct`() {
         val project = ProjectBuilder.builder().build()
         project.plugins.apply("java")
-        project.plugins.apply(ArchrulesRunnerPlugin::class.java)
+        project.plugins.apply("com.netflix.nebula.archrules.runner")
         val consoleReport = project.tasks.named<PrintConsoleReportTask>("archRulesConsoleReport")
         assertThat(consoleReport.get().dataFiles.files)
             .`as`("console report inputs are correct")
@@ -108,7 +111,7 @@ class ArchrulesRunnerPluginTest {
     fun `settings defaults`() {
         val project = ProjectBuilder.builder().build()
         project.plugins.apply("java")
-        project.plugins.apply(ArchrulesRunnerPlugin::class.java)
+        project.plugins.apply("com.netflix.nebula.archrules.runner")
         val extension = project.extensions.findByType<ArchrulesExtension>()!!
         assertThat(extension.consoleReportEnabled.get()).isTrue()
         assertThat(extension.jsonReportEnabled.get()).isTrue()
@@ -126,7 +129,7 @@ class ArchrulesRunnerPluginTest {
         }
 
         val result = runner.run("check", "--stacktrace", "-x", "test") {
-            withGradleVersion(gradleVersion.version)
+            withGradle(gradleVersion.version)
             forwardOutput()
         }
 
@@ -193,19 +196,15 @@ class ArchrulesRunnerPluginTest {
             setupConsumerProject()
         }
 
-        val result = runner.run("outgoingVariants", "--stacktrace") {
-            withGradleVersion(gradleVersion.version)
+        val result = runner.outgoingVariant("archRulesReportElements") {
+            withGradle(gradleVersion.version)
             forwardOutput()
         }
-
-        containsInOrder(
-            result.output,
-            "Variant archRulesReportElements",
-            "- org.gradle.category         = verification",
-            "- org.gradle.verificationtype = arch-rules",
-            "- build/reports/archrules/main.data (artifactType = binary)",
-            "- build/reports/archrules/test.data (artifactType = binary)"
-        )
+        assertThat(result)
+            .contains("- org.gradle.category         = verification")
+            .contains("- org.gradle.verificationtype = arch-rules")
+            .contains("- build/reports/archrules/main.data (artifactType = binary)")
+            .contains("- build/reports/archrules/test.data (artifactType = binary)")
     }
 
     @Test
@@ -350,7 +349,7 @@ archRules {
         }
 
         val result = runner.run("check", "--stacktrace", "-x", "test") {
-            withGradleVersion(gradleVersion.version)
+            withGradle(gradleVersion.version)
             forwardOutput()
         }
 
@@ -597,13 +596,13 @@ archRules {
         val mainReport = projectDir.resolve("build/reports/archrules/main.data")
         val results = readDetails(mainReport)
 
-        val deprecatedForRemovalResults = results.filter { it.rule.ruleName.equals("deprecatedForRemoval") }
+        val deprecatedForRemovalResults = results.filter { it.rule.ruleName == "deprecatedForRemoval" }
         assertThat(deprecatedForRemovalResults).hasSize(1)
         deprecatedForRemovalResults.forEach { result ->
             assertThat(result.rule.priority).isEqualTo(Priority.HIGH)
         }
 
-        val deprecatedResults = results.filter { it.rule.ruleName.equals("deprecated") }
+        val deprecatedResults = results.filter { it.rule.ruleName == "deprecated" }
         assertThat(deprecatedResults).hasSize(2)
         deprecatedResults.forEach { result ->
             assertThat(result.rule.priority).isEqualTo(Priority.MEDIUM)
@@ -635,10 +634,10 @@ archRules {
         val mainReport = projectDir.resolve("build/reports/archrules/main.data")
         val results = readDetails(mainReport)
 
-        val deprecatedForRemovalResults = results.filter { it.rule.ruleName.equals("deprecatedForRemoval") }
+        val deprecatedForRemovalResults = results.filter { it.rule.ruleName == "deprecatedForRemoval" }
         assertThat(deprecatedForRemovalResults).hasSize(1)
 
-        val deprecatedResults = results.filter { it.rule.ruleName.equals("deprecated") }
+        val deprecatedResults = results.filter { it.rule.ruleName == "deprecated" }
         assertThat(deprecatedResults).isEmpty()
     }
 
@@ -678,7 +677,12 @@ archRules {
             }
         }
 
-        val result = runner.run("archRulesConsoleReport", "--rule-name=no Optional class fields", "--rule-name=deprecated", "--stacktrace")
+        val result = runner.run(
+            "archRulesConsoleReport",
+            "--rule-name=no Optional class fields",
+            "--rule-name=deprecated",
+            "--stacktrace"
+        )
         assertThat(result.task(":checkArchRulesMain")).hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
         assertThat(result.output)
@@ -691,14 +695,21 @@ archRules {
     fun `ruleClass level source set includes`() {
         val runner = testProject(projectDir) {
             setupConsumerProject {
-                dependencies("""
+                dependencies(
+                    """
                     archRules("com.netflix.nebula:archrules-nullability:0.+")
                     archRules("com.netflix.nebula:archrules-joda:0.+")
-                """)
+                """
+                )
             }
         }
 
-        val result = runner.run("archRulesConsoleReport", "--rule-class=com.netflix.nebula.archrules.nullability", "--rule-name=jodaRule", "--stacktrace")
+        val result = runner.run(
+            "archRulesConsoleReport",
+            "--rule-class=com.netflix.nebula.archrules.nullability",
+            "--rule-name=jodaRule",
+            "--stacktrace"
+        )
         assertThat(result.task(":checkArchRulesMain")).hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
         val mainReport = projectDir.resolve("build/reports/archrules/main.data")
@@ -745,7 +756,7 @@ archRules {
         val results = readDetails(mainReport)
 
         // assert priority stays default
-        val deprecationResult = results.firstOrNull { it.rule.ruleName.equals("deprecated") }
+        val deprecationResult = results.firstOrNull { it.rule.ruleName == "deprecated" }
         assertThat(deprecationResult).isNotNull
         assertThat(deprecationResult!!.rule.priority).isEqualTo(Priority.LOW)
     }
@@ -827,15 +838,9 @@ configurations.named("testRuntimeClasspath") {
         assertThat(result.task(":consumer:archRulesConsoleReport")).hasOutcome(TaskOutcome.SUCCESS)
     }
 
-    private fun containsInOrder(actual: String, vararg expected: String) {
-        var i = 0
-        for (e in expected) {
-            assertThat(actual).contains(e)
-            val newIndex = actual.indexOf(e, i)
-            assertThat(newIndex)
-                .`as`("$e found at $newIndex but should be after $i")
-                .isGreaterThan(i)
-            i = newIndex
-        }
+    private fun TestProjectRunner.outgoingVariant(name: String, customizer: GradleRunner.() -> Unit): String {
+        return run("outgoingVariants", "--variant", name, "--stacktrace") {
+            customizer.invoke(this)
+        }.output.substringBefore("Secondary Variants (*)")
     }
 }

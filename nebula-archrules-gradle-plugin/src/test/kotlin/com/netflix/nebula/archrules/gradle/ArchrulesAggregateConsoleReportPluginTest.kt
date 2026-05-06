@@ -133,7 +133,6 @@ archRulesAggregate {
             .doesNotContain("deprecated")
     }
 
-
     @Test
     fun `test details threshold`() {
         val runner = testProject(projectDir) {

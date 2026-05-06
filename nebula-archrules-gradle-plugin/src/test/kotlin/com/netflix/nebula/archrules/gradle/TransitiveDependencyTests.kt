@@ -24,6 +24,7 @@ class TransitiveDependencyTests {
             plugins {
                 id("java-library")
                 id("com.netflix.nebula.archrules.library")
+                id("maven-publish") // needed to avoid gradle warnings about depending on unpublished project
             }
             repositories {
                 maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
@@ -35,6 +36,7 @@ class TransitiveDependencyTests {
                     exampleHelperClass()
                 }
             }
+            declareMavenPublication() // needed to avoid gradle warnings about depending on unpublished project
         }
     }
 

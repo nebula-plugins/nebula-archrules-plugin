@@ -5,7 +5,9 @@ import org.gradle.api.attributes.AttributeCompatibilityRule
 import org.gradle.api.attributes.CompatibilityCheckDetails
 import org.gradle.api.attributes.Usage
 
-@Deprecated("needed for backward compatibility until all artifacts are produced with new usage attribute")
+/**
+ * This allows resolution to occur in archrules classpaths where a library does not provide archrules
+ */
 class ArchRuleCompatibilityRule : AttributeCompatibilityRule<Usage> {
     override fun execute(t: CompatibilityCheckDetails<Usage>) {
         if (t.consumerValue?.name == ARCH_RULES && t.producerValue?.name == Usage.JAVA_RUNTIME) {
