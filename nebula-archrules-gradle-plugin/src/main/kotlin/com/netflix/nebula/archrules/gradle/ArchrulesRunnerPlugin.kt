@@ -74,7 +74,8 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
 
             val markdownReportTask = project.tasks.register<PrintMarkdownReportTask>("archRulesMarkdownReport") {
                 dataFiles.from(project.tasks.withType<CheckRulesTask>())
-                markdownReportFile.set(archRulesReportDir.map { it.file("report.md").asFile })
+                markdownReportFile.set(archRulesReportDir.map { it.file("report.md") })
+                detailsThreshold.set(archRulesExt.consoleDetailsThreshold)
                 onlyIf { archRulesExt.markdownReportEnabled.get() }
             }
 

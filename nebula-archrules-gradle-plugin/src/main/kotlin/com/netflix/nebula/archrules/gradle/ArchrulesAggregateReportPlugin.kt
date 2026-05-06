@@ -12,7 +12,7 @@ import org.gradle.kotlin.dsl.project
 import org.gradle.kotlin.dsl.register
 import javax.inject.Inject
 
-class ArchrulesAggregateConsoleReportPlugin @Inject constructor(val objects: ObjectFactory) : Plugin<Project> {
+class ArchrulesAggregateReportPlugin @Inject constructor(val objects: ObjectFactory) : Plugin<Project> {
 
     override fun apply(project: Project) {
         val verification: Category = objects.named(Category.VERIFICATION)
@@ -45,6 +45,28 @@ class ArchrulesAggregateConsoleReportPlugin @Inject constructor(val objects: Obj
             )
             summaryForPassingDisabled.set(ext.skipPassingSummaries)
             detailsThreshold.set(ext.consoleDetailsThreshold)
+        }
+
+        project.tasks.register<PrintMarkdownReportTask>("archRulesAggregateMarkdownReport") {
+            dataFiles.from(
+                archRulesDataFiles.incoming.artifactView {
+                    withVariantReselection()
+                    lenient(true) // to handle the case where a subproject doesn't have archrules runner
+                    attributes {
+                        attribute(Category.CATEGORY_ATTRIBUTE, verification)
+                        attribute(VerificationType.VERIFICATION_TYPE_ATTRIBUTE, archRulesVerificationType)
+                    }
+                }.artifacts.resolvedArtifacts.map {
+                    // filter for only artifacts that match the attributes
+                    it.filter {
+                        it.hasCategory(verification) && it.hasVerificationType(archRulesVerificationType)
+                    }.map {
+                        it.file
+                    }
+                }
+            )
+            detailsThreshold.set(ext.consoleDetailsThreshold)
+            markdownReportFile.set(project.layout.buildDirectory.file("reports/archrules/report.md"))
         }
     }
 

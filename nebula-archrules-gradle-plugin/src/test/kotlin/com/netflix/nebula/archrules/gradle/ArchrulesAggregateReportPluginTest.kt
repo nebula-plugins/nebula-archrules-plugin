@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 
-class ArchrulesAggregateConsoleReportPluginTest {
+class ArchrulesAggregateReportPluginTest {
     @TempDir
     lateinit var projectDir: File
 
@@ -104,11 +104,32 @@ class ArchrulesAggregateConsoleReportPluginTest {
         val result = runner.run("archRulesAggregateConsoleReport") {
             forwardOutput()
         }
+        assertThat(result)
+            .hasNoDeprecationWarnings()
+            .hasNoMutableStateWarnings()
         assertThat(result.task(":sub1:checkArchRulesMain"))
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
         assertThat(result.output)
             .contains("deprecatedForRemoval  MEDIUM     (2 failures)")
             .contains("deprecated            LOW        (4 failures)")
+    }
+
+    @Test
+    fun `test markdown`() {
+        val runner = testProject(projectDir) {
+            setup()
+        }
+        val result = runner.run("archRulesAggregateMarkdownReport") {
+            forwardOutput()
+        }
+        assertThat(result)
+            .hasNoDeprecationWarnings()
+            .hasNoMutableStateWarnings()
+        assertThat(result.task(":sub1:checkArchRulesMain"))
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+        assertThat(result.task(":archRulesAggregateMarkdownReport"))
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+        assertThat(projectDir.resolve("build/reports/archrules/report.md")).exists()
     }
 
     @Test
