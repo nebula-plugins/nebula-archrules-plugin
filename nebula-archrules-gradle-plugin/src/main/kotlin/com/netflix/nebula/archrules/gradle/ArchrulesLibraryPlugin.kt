@@ -36,13 +36,11 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
             }
             project.configurations.named(archRulesSourceSet.runtimeClasspathConfigurationName).configure {
                 attributes {
-                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
                     attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
                 }
             }
             project.configurations.named(archRulesSourceSet.compileClasspathConfigurationName).configure {
                 attributes {
-                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
                     attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
                 }
             }
@@ -110,14 +108,12 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                             project.configurations.named(runtimeClasspathConfigurationName).configure {
                                 extendsFrom(project.configurations.getByName(archRulesSourceSet.runtimeClasspathConfigurationName))
                                 attributes {
-                                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
                                     attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
                                 }
                             }
                             project.configurations.named(compileClasspathConfigurationName).configure {
                                 extendsFrom(project.configurations.getByName(archRulesSourceSet.compileClasspathConfigurationName))
                                 attributes {
-                                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
                                     attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
                                 }
                             }
@@ -158,7 +154,6 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                 )
                 outgoing.artifacts.add(jarArtifact)
                 attributes {
-                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
                     attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
                 }
             }

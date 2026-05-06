@@ -26,7 +26,7 @@ internal class IntegrationTest {
         }
 
         val result = runner.run("check", "--stacktrace") {
-            withGradleVersion(gradleVersion.version)
+            withGradle(gradleVersion.version)
             forwardOutput()
         }
 
@@ -73,7 +73,7 @@ internal class IntegrationTest {
         }
 
         val result = runner.run("check", "--stacktrace") {
-            withGradleVersion(gradleVersion.version)
+            withGradle(gradleVersion.version)
             forwardOutput()
         }
 
@@ -127,7 +127,7 @@ internal class IntegrationTest {
         }
 
         val result = runner.run("check", "--stacktrace") {
-            withGradleVersion(gradleVersion.version)
+            withGradle(gradleVersion.version)
             forwardOutput()
         }
 
