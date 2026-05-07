@@ -12,11 +12,14 @@ import nebula.test.dsl.run
 import nebula.test.dsl.src
 import nebula.test.dsl.subProject
 import nebula.test.dsl.testProject
+import nebula.test.dsl.withGradle
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import java.io.File
 
 class ArchrulesAggregateReportPluginTest {
@@ -96,13 +99,15 @@ class ArchrulesAggregateReportPluginTest {
         assertThat(extension.consoleDetailsThreshold.get()).isEqualTo(Priority.MEDIUM)
     }
 
-    @Test
-    fun test() {
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `test console`(gradle: SupportedGradleVersion) {
         val runner = testProject(projectDir) {
             setup()
         }
         val result = runner.run("archRulesAggregateConsoleReport") {
             forwardOutput()
+            withGradle(gradle.version)
         }
         assertThat(result)
             .hasNoDeprecationWarnings()
@@ -114,13 +119,15 @@ class ArchrulesAggregateReportPluginTest {
             .contains("deprecated            LOW        (4 failures)")
     }
 
-    @Test
-    fun `test markdown`() {
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `test markdown`(gradle: SupportedGradleVersion) {
         val runner = testProject(projectDir) {
             setup()
         }
         val result = runner.run("archRulesAggregateMarkdownReport") {
             forwardOutput()
+            withGradle(gradle.version)
         }
         assertThat(result)
             .hasNoDeprecationWarnings()
