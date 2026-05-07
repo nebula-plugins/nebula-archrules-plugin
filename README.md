@@ -19,6 +19,8 @@ Rules can be sourced from OSS libraries or private internal libraries. You can f
 ### Aggregate Console Report Plugin
 [![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/com.netflix.nebula.archrules.aggregate?style=for-the-badge&color=01AF01)](https://plugins.gradle.org/plugin/com.netflix.nebula.archrules.aggregate)
 
+### Gradle Compatibility
+Look at the [SupportedGradleVersions](https://github.com/nebula-plugins/nebula-archrules-plugin/blob/main/nebula-archrules-gradle-plugin/src/test/kotlin/com/netflix/nebula/archrules/gradle/SupportedGradleVersions.kt) to see what the currently supported range of Gradle versions is.
 
 ## Authoring Rules
 
@@ -237,6 +239,8 @@ archRulesAggregate {
     consoleDetailsThreshold("HIGH")
 }
 ```
+
+To run the aggregate reports, use the `archRulesAggregateMarkdownReport` and `archRulesAggregateConsoleReport` tasks.
 
 #### Filtering specific rules
 If you would like to only display certain rules or rule classes on the CLI, you can use the following flags.

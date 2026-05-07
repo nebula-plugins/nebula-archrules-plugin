@@ -22,7 +22,10 @@ class ArchrulesAggregateReportPlugin @Inject constructor(val objects: ObjectFact
         ext.consoleDetailsThreshold(Priority.MEDIUM)
 
         val archRulesDataFiles = project.configurations.detachedConfiguration(
-            *project.subprojects.map { project.dependencies.project(it.path) }.toTypedArray()
+            *project.subprojects.map {
+                // use old API for pre-gradle 9.5 compatibility
+                project.dependencies.project(mapOf("path" to it.path))
+            }.toTypedArray()
         ).apply { description = "projects to collect archrules data from" }
 
         project.tasks.register<PrintConsoleReportTask>("archRulesAggregateConsoleReport") {
