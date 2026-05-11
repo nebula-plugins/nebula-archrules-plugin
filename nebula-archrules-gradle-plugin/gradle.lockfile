@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-cglib:cglib-nodep:3.2.2=testRuntimeClasspath
+cglib:cglib-nodep:3.2.2=testArchRulesRuntime,testRuntimeClasspath
 com.fasterxml.jackson.core:jackson-annotations:2.21=compileClasspath
 com.jayway.jsonpath:json-path:2.9.0=testArchRulesRuntime,testCompileClasspath,testRuntimeClasspath
 com.netflix.nebula:archrules-common:0.11.2=archRules,mainArchRulesRuntime,testArchRulesRuntime
@@ -14,7 +14,7 @@ com.netflix.nebula:archrules-nullability:0.11.2=archRules,mainArchRulesRuntime,t
 com.netflix.nebula:archrules-security:0.11.2=archRules,mainArchRulesRuntime,testArchRulesRuntime
 com.netflix.nebula:archrules-testing-frameworks:0.11.2=archRules,mainArchRulesRuntime,testArchRulesRuntime
 com.netflix.nebula:nebula-archrules-core:0.16.0=archRules
-com.netflix.nebula:nebula-archrules-core:0.18.1=mainArchRulesRuntime,testArchRulesRuntime
+com.netflix.nebula:nebula-archrules-core:1.0.1=mainArchRulesRuntime,testArchRulesRuntime
 com.netflix.nebula:nebula-test:12.3.0=testArchRulesRuntime,testCompileClasspath,testRuntimeClasspath
 com.tngtech.archunit:archunit:1.4.1=archRules
 com.tngtech.archunit:archunit:1.4.2=compileClasspath,mainArchRulesRuntime,runtimeClasspath,testArchRulesRuntime,testCompileClasspath,testRuntimeClasspath
@@ -69,7 +69,7 @@ org.junit.platform:junit-platform-commons:1.14.3=testArchRulesRuntime,testCompil
 org.junit.platform:junit-platform-engine:1.14.3=testArchRulesRuntime,testCompileClasspath,testRuntimeClasspath
 org.junit.platform:junit-platform-launcher:1.14.3=testArchRulesRuntime,testCompileClasspath,testRuntimeClasspath
 org.junit:junit-bom:5.14.3=testArchRulesRuntime,testCompileClasspath,testRuntimeClasspath
-org.objenesis:objenesis:2.4=testRuntimeClasspath
+org.objenesis:objenesis:2.4=testArchRulesRuntime,testRuntimeClasspath
 org.opentest4j:opentest4j:1.3.0=testArchRulesRuntime,testCompileClasspath,testRuntimeClasspath
 org.ow2.asm:asm:9.3=testArchRulesRuntime,testRuntimeClasspath
 org.slf4j:slf4j-api:2.0.17=archRules,compileClasspath,mainArchRulesRuntime,runtimeClasspath,testArchRulesRuntime,testCompileClasspath,testRuntimeClasspath
