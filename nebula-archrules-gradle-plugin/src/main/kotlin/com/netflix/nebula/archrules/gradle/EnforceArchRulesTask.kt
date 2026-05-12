@@ -33,10 +33,10 @@ abstract class EnforceArchRulesTask : DefaultTask() {
             .filter { it.status == RuleResultStatus.FAIL }
             .filter { shouldFail(it.rule.priority) }
         if (criticalFailures.isNotEmpty()) {
-            throw RuntimeException(
+            throw VerificationException(
                 "ArchRules failed: ${
                     criticalFailures.joinToString("\n") {
-                        "${it.rule.ruleName} (${it.rule.priority})"
+                        "${it.rule.ruleName} (${it.rule.priority}) ${it.message}"
                     }
                 }"
             )
