@@ -10,6 +10,7 @@ import nebula.test.dsl.properties
 import nebula.test.dsl.repositories
 import nebula.test.dsl.rootProject
 import nebula.test.dsl.run
+import nebula.test.dsl.runAndFail
 import nebula.test.dsl.settings
 import nebula.test.dsl.src
 import nebula.test.dsl.subProject
@@ -154,7 +155,8 @@ class ArchrulesRunnerPluginTest {
             .hasOutcome(TaskOutcome.SUCCESS)
 
         assertThat(result.task(":enforceArchRules"))
-            .hasOutcome(TaskOutcome.SKIPPED)
+            .`as`("verification runs but does not fail the build")
+            .hasOutcome(TaskOutcome.SUCCESS)
 
         assertThat(result)
             .hasNoMutableStateWarnings()
@@ -842,5 +844,44 @@ configurations.named("testRuntimeClasspath") {
         return run("outgoingVariants", "--variant", name, "--stacktrace") {
             customizer.invoke(this)
         }.output.substringBefore("Secondary Variants (*)")
+    }
+
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `plugin verification`(gradleVersion: SupportedGradleVersion) {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                rawBuildScript(
+                    """
+archRules {
+    failureThreshold("MEDIUM")
+}
+"""
+                )
+            }
+        }
+
+        val result = runner.runAndFail("check", "--stacktrace", "-x", "test") {
+            withGradle(gradleVersion.version)
+            forwardOutput()
+        }
+
+        assertThat(result.task(":enforceArchRules"))
+            .`as`("verification task fails")
+            .hasOutcome(TaskOutcome.FAILED)
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+
+        assertThat(result.output)
+            .contains("ArchRules Critical Failure")
+            .contains("Problems report is available at:")
+
+        if (gradleVersion != SupportedGradleVersion.GRADLE_9_1) {
+            assertThat(result.output)
+                .`as`("enhanced problems output in newer gradle versions")
+                .contains("Solution: Fix critical errors reported in Problems Report")
+        }
     }
 }
