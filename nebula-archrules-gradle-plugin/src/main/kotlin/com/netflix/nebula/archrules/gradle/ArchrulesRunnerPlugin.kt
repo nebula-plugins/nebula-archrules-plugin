@@ -96,7 +96,7 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
             val enforceTask = project.tasks.register<EnforceArchRulesTask>("enforceArchRules") {
                 dataFiles.from(project.tasks.withType<CheckRulesTask>())
                 failureThreshold.set(archRulesExt.failureThreshold)
-                onlyIf { failureThreshold.isPresent }
+                warningThreshold.set(archRulesExt.consoleDetailsThreshold)
             }
 
             project.tasks.named("check") {

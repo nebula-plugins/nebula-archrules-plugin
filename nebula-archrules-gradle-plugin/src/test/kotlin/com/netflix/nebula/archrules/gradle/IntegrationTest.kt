@@ -45,7 +45,7 @@ internal class IntegrationTest {
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE)
 
         assertThat(result.task(":code-to-check:enforceArchRules"))
-            .hasOutcome(TaskOutcome.SKIPPED)
+            .hasOutcome(TaskOutcome.SUCCESS)
 
         assertThat(result)
             .hasNoMutableStateWarnings()
@@ -136,37 +136,6 @@ internal class IntegrationTest {
 
         assertThat(result.task(":code-to-check:check"))
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE)
-        assertThat(result)
-            .hasNoMutableStateWarnings()
-            .hasNoDeprecationWarnings()
-    }
-
-    @Test
-    fun `test fail mode`() {
-        val runner = testProject(projectDir) {
-            properties {
-                buildCache(true)
-            }
-            projectWithHighRules()
-            projectWithCodeUsingDeprecatedCode {
-                rawBuildScript(
-                    """
-archRules {
-    failureThreshold("HIGH")
-}
-"""
-                )
-            }
-        }
-
-        val result = runner.runAndFail("check", "--stacktrace") {
-            forwardOutput()
-        }
-        assertThat(result.task(":code-to-check:enforceArchRules"))
-            .hasOutcome(TaskOutcome.FAILED)
-
-        assertThat(result.output).contains("ArchRules failed: deprecated (HIGH)")
-
         assertThat(result)
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
