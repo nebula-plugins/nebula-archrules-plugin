@@ -4,6 +4,7 @@ import com.netflix.nebula.archrules.gradle.ArchRuleAttribute.ARCH_RULES
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.attributes.Usage
+import org.gradle.api.attributes.java.TargetJvmEnvironment
 import org.gradle.api.component.AdhocComponentWithVariants
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact
 import org.gradle.api.internal.project.ProjectInternal
@@ -37,11 +38,13 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
             project.configurations.named(archRulesSourceSet.runtimeClasspathConfigurationName).configure {
                 attributes {
                     attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                    attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, project.objects.named(TargetJvmEnvironment.STANDARD_JVM))
                 }
             }
             project.configurations.named(archRulesSourceSet.compileClasspathConfigurationName).configure {
                 attributes {
                     attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                    attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, project.objects.named(TargetJvmEnvironment.STANDARD_JVM))
                 }
             }
             project.dependencies.add(
@@ -155,6 +158,7 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                 outgoing.artifacts.add(jarArtifact)
                 attributes {
                     attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                    attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, project.objects.named(TargetJvmEnvironment.STANDARD_JVM))
                 }
             }
             val adhocComponent = component as AdhocComponentWithVariants
