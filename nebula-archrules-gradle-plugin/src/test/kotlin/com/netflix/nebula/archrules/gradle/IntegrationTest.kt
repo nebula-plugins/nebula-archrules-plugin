@@ -249,4 +249,40 @@ internal class IntegrationTest {
             additionalConfig.invoke(this)
         }
     }
+
+    /**
+     * checkstyle is an example of a task that depends on the classes task output of the archRules source set
+     */
+    @Test
+    fun `test checkstyle integration`() {
+        val runner = testProject(projectDir) {
+            properties {
+                buildCache(true)
+                configurationCache(true)
+            }
+            projectWithRules{
+                plugins {
+                    id("checkstyle")
+                }
+            }
+        }
+        projectDir.resolve("config/checkstyle/checkstyle.xml").apply {
+            parentFile.mkdirs()
+            createNewFile()
+            writeText(
+                //language=xml
+                """<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+  "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+  "https://checkstyle.org/dtds/configuration_1_3.dtd">
+  <module name="Checker">
+  </module>
+  """)
+        }
+
+        val result = runner.run("check", "--stacktrace")
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+    }
 }
