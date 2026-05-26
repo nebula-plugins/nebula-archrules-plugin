@@ -58,14 +58,14 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                             "resources/archRules/META-INF/services/com.netflix.nebula.archrules.core.ArchRulesService"
                         )
                     )
-                    ruleSourceClasses.setFrom(archRulesSourceSet.output)
-                    dependsOn(archRulesSourceSet.classesTaskName)
+                    ruleSourceClasses.from(project.tasks.named<JavaCompile>(archRulesSourceSet.compileJavaTaskName))
+                    project.pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+                        ruleSourceClasses.from(project.tasks.named(archRulesSourceSet.getCompileTaskName("kotlin")))
+                    }
+                    dependsOn(project.tasks.named(archRulesSourceSet.processResourcesTaskName))
                 }
             project.tasks.named(archRulesSourceSet.classesTaskName) {
-                finalizedBy(generateServicesTask)
-            }
-            project.tasks.named("processArchRulesResources") {
-                finalizedBy(generateServicesTask)
+                dependsOn(generateServicesTask)
             }
             val jarTask = project.tasks.register<Jar>("archRulesJar") {
                 description = "Assembles a jar archive containing the classes of the arch rules."
