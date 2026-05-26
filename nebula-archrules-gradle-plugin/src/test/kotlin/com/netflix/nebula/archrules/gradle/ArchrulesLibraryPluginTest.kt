@@ -403,4 +403,16 @@ class ArchrulesLibraryPluginTest {
             .contains("## kotlinDeprecated")
             .doesNotContain("## public classes should be @NullMarked")
     }
+
+    @Test
+    fun `react to checkstyle plugin`() {
+        val project = ProjectBuilder.builder().build()
+        project.plugins.apply("java")
+        project.plugins.apply("checkstyle")
+        project.plugins.apply("com.netflix.nebula.archrules.library")
+        val generateServicesRegistry = project.tasks.getByName("generateServicesRegistry")
+        val checkstyleArchRules = project.tasks.getByName("checkstyleArchRules")
+        val dependencies = checkstyleArchRules.taskDependencies.getDependencies(checkstyleArchRules)
+        assertThat(dependencies).contains(generateServicesRegistry)
+    }
 }

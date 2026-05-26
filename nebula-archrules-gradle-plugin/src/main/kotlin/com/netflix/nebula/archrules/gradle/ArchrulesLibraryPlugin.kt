@@ -120,6 +120,7 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                         }
                     }
                 }
+                project.tasks.findByName("checkstyleArchRules")?.dependsOn(generateServicesTask)
                 project.tasks.named("check") {
                     dependsOn(ext.suites.named("archRulesTest"))
                 }
