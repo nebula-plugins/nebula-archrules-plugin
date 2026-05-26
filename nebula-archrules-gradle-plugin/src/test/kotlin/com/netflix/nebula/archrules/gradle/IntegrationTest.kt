@@ -98,6 +98,20 @@ internal class IntegrationTest {
 
         assertThat(reportsDir.exists())
         assertThat(reportsDir.resolve("main.data")).exists().isNotEmpty
+
+        val diArchRulesResult = runner.run(
+            ":code-to-check:dependencyInsight",
+            "--configuration", "mainArchrulesRuntime",
+            "--dependency", "library-with-rules"
+        )
+        assertThat(diArchRulesResult.output).contains("Variant archRulesRuntimeElements:")
+
+        val diRuntimeResult = runner.run(
+            ":code-to-check:dependencyInsight",
+            "--configuration", "runtimeClasspath",
+            "--dependency", "library-with-rules"
+        )
+        assertThat(diRuntimeResult.output).contains("Variant runtimeElements:")
     }
 
     @ParameterizedTest

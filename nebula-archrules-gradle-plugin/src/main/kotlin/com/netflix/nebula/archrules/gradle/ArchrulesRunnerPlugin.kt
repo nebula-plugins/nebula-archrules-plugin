@@ -41,6 +41,7 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
         project.plugins.withId("java") {
             project.dependencies.attributesSchema.attribute(Usage.USAGE_ATTRIBUTE) {
                 compatibilityRules.add(ArchRuleCompatibilityRule::class)
+                disambiguationRules.add(ArchRuleDisambiguationRule::class)
             }
 
             val archRulesExt = project.extensions.create<ArchrulesExtension>("archRules")
