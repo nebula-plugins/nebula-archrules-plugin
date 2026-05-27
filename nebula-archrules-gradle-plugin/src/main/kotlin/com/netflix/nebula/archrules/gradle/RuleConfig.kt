@@ -14,6 +14,12 @@ class RuleConfig {
     var priority: Priority? = null
     val sourceSetsToSkip: MutableList<String> = mutableListOf()
 
+    val predicates: MutableList<ArchrulesPredicate> = mutableListOf()
+
+    fun classesThat(predicate: ArchrulesPredicate) {
+        predicates += predicate
+    }
+
     fun priority(priority: String) {
         val validStrings = EnumSet.allOf(Priority::class.java).map { it.asString() }.toSet()
         if (validStrings.contains(priority)) {

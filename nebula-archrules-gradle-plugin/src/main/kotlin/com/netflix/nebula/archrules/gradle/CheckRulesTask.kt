@@ -28,6 +28,9 @@ abstract class CheckRulesTask @Inject constructor(private val workerExecutor: Wo
     abstract val dataFile: Property<File>
 
     @get:Input
+    abstract val predicatesByName: MapProperty<String, List<ArchrulesPredicate>>
+
+    @get:Input
     abstract val priorityOverridesByName: MapProperty<String, Priority>
 
     @get:Input
@@ -47,6 +50,7 @@ abstract class CheckRulesTask @Inject constructor(private val workerExecutor: Wo
         workQueue.submit(RunRulesWorkAction::class) {
             getClassesToCheck().from(sourcesToCheck)
             getDataOutputFile().set(dataFile)
+            getPredicatesByName().set(this@CheckRulesTask.predicatesByName)
             getPriorityOverridesByName().set(this@CheckRulesTask.priorityOverridesByName)
             getPriorityOverridesByClass().set(this@CheckRulesTask.priorityOverridesByClass)
             getExcludedRules().set(this@CheckRulesTask.excludedRules)

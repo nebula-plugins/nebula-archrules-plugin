@@ -9,12 +9,15 @@ import org.gradle.workers.WorkParameters;
 import org.jspecify.annotations.NullMarked;
 
 import java.io.File;
+import java.util.List;
 
 @NullMarked
 public interface RunRulesParams extends WorkParameters {
     ConfigurableFileCollection getClassesToCheck();
 
     Property<File> getDataOutputFile();
+
+    MapProperty<String, List<ArchrulesPredicate>> getPredicatesByName();
 
     MapProperty<String, Priority> getPriorityOverridesByName();
 
