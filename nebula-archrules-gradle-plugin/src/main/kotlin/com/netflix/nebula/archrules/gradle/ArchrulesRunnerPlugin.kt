@@ -124,6 +124,11 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
         tasks.register<CheckRulesTask>("checkArchRules" + sourceSet.name.capitalized()) {
             description = "Checks ArchRules on ${sourceSet.name}"
             rulesClasspath.setFrom(sourceSetArchRulesRuntime)
+            predicatesByName.set(
+                ext.ruleOverrides.map {
+                    it.mapValues { it.value.predicates }
+                }
+            )
             priorityOverridesByName.set(
                 ext.ruleOverrides.map {
                     it.mapValues { it.value.priority }

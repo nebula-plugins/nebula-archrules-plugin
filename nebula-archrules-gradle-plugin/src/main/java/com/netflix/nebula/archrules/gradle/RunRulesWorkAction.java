@@ -2,6 +2,8 @@ package com.netflix.nebula.archrules.gradle;
 
 import com.netflix.nebula.archrules.core.ArchRulesService;
 import com.netflix.nebula.archrules.core.Runner;
+import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.importer.ClassFileImporterWithPackage;
 import com.tngtech.archunit.lang.Priority;
 import org.gradle.workers.WorkAction;
@@ -10,14 +12,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.ServiceLoader;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.netflix.nebula.archrules.core.NoClassesMatchedEvent.NO_MATCH_MESSAGE;
+import static com.tngtech.archunit.base.DescribedPredicate.not;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.simpleName;
 
 @NullMarked
 public abstract class RunRulesWorkAction implements WorkAction<RunRulesParams> {
@@ -79,7 +79,20 @@ public abstract class RunRulesWorkAction implements WorkAction<RunRulesParams> {
                     if (getParameters().getExcludedRules().get().contains(id)) {
                         LOGGER.info("Rule {} has been excluded for this source set", id);
                     } else {
-                        final var result = Runner.check(archRule, classesToCheck);
+                        final var predicates = getParameters().getPredicatesByName().orElse(Map.of()).get().getOrDefault(id, List.of());
+
+                        var classesToCheckForRule = classesToCheck;
+                        for (var predicate : predicates) {
+                            classesToCheckForRule = classesToCheckForRule
+                                .that(convertPredicate(predicate));
+                        }
+
+                        // TODO Remove debug prints
+                        System.out.println("RULE: " + id);
+                        System.out.println("PREDICATES: " + predicates);
+                        System.out.println("CLASSES: " + classesToCheckForRule);
+
+                        final var result = Runner.check(archRule, classesToCheckForRule);
 
                         // check if there is priority override by class first
                         var priority = getPriorityOverride(ruleClassName, id).orElse(result.getPriority());
@@ -103,4 +116,23 @@ public abstract class RunRulesWorkAction implements WorkAction<RunRulesParams> {
 
         ViolationsUtil.writeDetails(getParameters().getDataOutputFile().get(), violationList);
     }
+
+    private DescribedPredicate<JavaClass> convertPredicate(ArchrulesPredicate predicate) {
+        class ConvertingVisitor implements ArchrulesPredicateVisitor<DescribedPredicate<JavaClass>> {
+
+            @Override
+            public DescribedPredicate<JavaClass> visitNot(ArchrulesPredicate.NotPredicate predicate) {
+                return not(predicate.getPredicate().accept(this));
+            }
+
+            @Override
+            public DescribedPredicate<JavaClass> visitSimpleName(ArchrulesPredicate.SimpleNamePredicate predicate) {
+                return simpleName(predicate.getName());
+            }
+
+        }
+
+        return predicate.accept( new ConvertingVisitor());
+    }
+
 }

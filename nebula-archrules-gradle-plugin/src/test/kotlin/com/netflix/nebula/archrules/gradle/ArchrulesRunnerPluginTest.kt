@@ -17,6 +17,7 @@ import nebula.test.dsl.subProject
 import nebula.test.dsl.test
 import nebula.test.dsl.testProject
 import nebula.test.dsl.withGradle
+import org.assertj.core.api.Assertions.from
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.named
 import org.gradle.testfixtures.ProjectBuilder
@@ -641,6 +642,40 @@ archRules {
 
         val deprecatedResults = results.filter { it.rule.ruleName == "deprecated" }
         assertThat(deprecatedResults).isEmpty()
+    }
+
+    @Test
+    fun `rule level fine-grained filtering`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                rawBuildScript(
+                    """
+archRules {
+    ruleName("deprecated") {
+        classesThat(com.netflix.nebula.archrules.gradle.not(com.netflix.nebula.archrules.gradle.simpleName("FailingCode")))
+    }
+}
+"""
+                )
+            }
+        }
+
+        val result = runner.run("checkArchRulesMain", "--stacktrace", "--info")
+
+        assertThat(result.task(":checkArchRulesMain"))
+            .`as`("archRules run for main source set")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        val results = readDetails(mainReport)
+
+        val deprecatedForRemovalResults = results.filter { it.rule.ruleName == "deprecatedForRemoval" }
+        assertThat(deprecatedForRemovalResults).hasSize(1)
+
+        val deprecatedResults = results.filter { it.rule.ruleName == "deprecated" }
+        assertThat(deprecatedResults)
+            .singleElement()
+            .returns(RuleResultStatus.PASS, from(RuleResult::status))
     }
 
     @Test
