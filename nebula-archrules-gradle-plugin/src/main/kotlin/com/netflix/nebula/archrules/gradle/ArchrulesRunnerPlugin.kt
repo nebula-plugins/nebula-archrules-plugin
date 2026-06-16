@@ -112,14 +112,14 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
         val sourceSetArchRulesRuntime = configurations.resolvable(sourceSet.name + "ArchRulesRuntime") {
             extendsFrom(
                 project.configurations.getByName("archRules"),
-                configurations.getByName(sourceSet.runtimeClasspathConfigurationName)
+                configurations.getByName(sourceSet.compileClasspathConfigurationName)
             )
-            attributes.addAllLater(project.configurations.getByName(sourceSet.runtimeClasspathConfigurationName).attributes)
+            attributes.addAllLater(project.configurations.getByName(sourceSet.compileClasspathConfigurationName).attributes)
             attributes {
                 attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
                 attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements.CLASSES))
             }
-            shouldResolveConsistentlyWith(configurations.getByName(sourceSet.runtimeClasspathConfigurationName))
+            shouldResolveConsistentlyWith(configurations.getByName(sourceSet.compileClasspathConfigurationName))
         }
 
         tasks.register<CheckRulesTask>("checkArchRules" + sourceSet.name.capitalized()) {
