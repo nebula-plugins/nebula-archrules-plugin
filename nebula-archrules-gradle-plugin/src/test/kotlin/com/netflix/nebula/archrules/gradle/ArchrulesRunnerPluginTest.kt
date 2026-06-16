@@ -249,6 +249,45 @@ class ArchrulesRunnerPluginTest {
     }
 
     @Test
+    fun `plugin checks each sourceset from its compile classpath`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject(ruleDependency = false) {
+                dependencies(
+                    """testCompileOnly("com.netflix.nebula:archrules-deprecation:0.+")"""
+                )
+            }
+        }
+
+        val result = runner.run("check", "--stacktrace", "-x", "test")
+
+        assertThat(result.task(":checkArchRulesMain"))
+            .`as`("archRules run for main source set")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        assertThat(result.task(":checkArchRulesTest"))
+            .`as`("archRules run for test source set")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+
+        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        assertThat(mainReport)
+            .`as`("rule not in main classpath, so not checked")
+            .exists()
+        val mainErrors = readDetails(mainReport)
+        assertThat(mainErrors).isEmpty()
+
+        val testReport = projectDir.resolve("build/reports/archrules/test.data")
+        assertThat(testReport)
+            .`as`("Test data created")
+            .exists()
+        val testErrors = readDetails(testReport)
+        assertThat(testErrors).hasSize(2)
+    }
+
+    @Test
     fun `console report can be disabled`() {
         val runner = testProject(projectDir) {
             setupConsumerProject(setupSources = false) {
@@ -821,12 +860,12 @@ artifacts {
                 rawBuildScript(
                     """
 val myAttribute = Attribute.of("com.example.my-attribute", String::class.java)
-configurations.named("runtimeClasspath") {
+configurations.named("compileClasspath") {
     attributes {
         attribute(myAttribute, "v2")
     }
 }
-configurations.named("testRuntimeClasspath") {
+configurations.named("testCompileClasspath") {
     attributes {
         attribute(myAttribute, "v2")
     }
@@ -893,7 +932,7 @@ archRules {
                     """implementation("com.google.guava:guava")"""
                 )
                 rawBuildScript("""
-configurations.named("runtimeClasspath") {
+configurations.named("compileClasspath") {
     resolutionStrategy.dependencySubstitution {
         substitute(module("com.google.guava:guava")).using(module("com.google.guava:guava:21.0"))
     }
@@ -901,8 +940,8 @@ configurations.named("runtimeClasspath") {
 """)
             }
         }
-        val resultRuntime = runner.run("dependencyInsight", "--stacktrace",
-            "--configuration", "runtimeClasspath",
+        val compileClasspath = runner.run("dependencyInsight", "--stacktrace",
+            "--configuration", "compileClasspath",
             "--dependency","guava")
         val result = runner.run("dependencyInsight", "--stacktrace",
             "--configuration", "mainArchRulesRuntime",
