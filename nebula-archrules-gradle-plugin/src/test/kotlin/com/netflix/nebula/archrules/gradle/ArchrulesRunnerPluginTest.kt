@@ -884,4 +884,31 @@ archRules {
                 .contains("Solution: Fix critical errors reported in Problems Report")
         }
     }
+
+    @Test
+    fun `archRulesRuntime configuration respects resolution rules`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject(ruleDependency = true) {
+                dependencies(
+                    """implementation("com.google.guava:guava")"""
+                )
+                rawBuildScript("""
+configurations.named("runtimeClasspath") {
+    resolutionStrategy.dependencySubstitution {
+        substitute(module("com.google.guava:guava")).using(module("com.google.guava:guava:21.0"))
+    }
+}
+""")
+            }
+        }
+        val resultRuntime = runner.run("dependencyInsight", "--stacktrace",
+            "--configuration", "runtimeClasspath",
+            "--dependency","guava")
+        val result = runner.run("dependencyInsight", "--stacktrace",
+            "--configuration", "mainArchRulesRuntime",
+            "--dependency","guava")
+        assertThat(result.output)
+            .doesNotContain("FAILED")
+            .contains("com.google.guava:guava:21.0")
+    }
 }
