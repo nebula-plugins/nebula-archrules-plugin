@@ -1,4 +1,4 @@
-package com.netflix.nebula.archrules.gradle;
+package com.netflix.nebula.archrules.gradle
 
 import com.tngtech.archunit.lang.Priority
 import org.gradle.api.DefaultTask
@@ -6,7 +6,13 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.*
+import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.submit
 import org.gradle.workers.WorkQueue
 import org.gradle.workers.WorkerExecutor
@@ -39,18 +45,27 @@ abstract class CheckRulesTask @Inject constructor(private val workerExecutor: Wo
     @get:Input
     abstract val excludedRuleClasses: ListProperty<String>
 
+    @get:Input
+    abstract val skip: Property<Boolean>
+
     @TaskAction
     fun checkRules() {
-        val workQueue: WorkQueue = workerExecutor.classLoaderIsolation {
-            classpath.from(rulesClasspath)
-        }
-        workQueue.submit(RunRulesWorkAction::class) {
-            getClassesToCheck().from(sourcesToCheck)
-            getDataOutputFile().set(dataFile)
-            getPriorityOverridesByName().set(this@CheckRulesTask.priorityOverridesByName)
-            getPriorityOverridesByClass().set(this@CheckRulesTask.priorityOverridesByClass)
-            getExcludedRules().set(this@CheckRulesTask.excludedRules)
-            getExcludedRuleClasses().set(this@CheckRulesTask.excludedRuleClasses)
+        if (skip.getOrElse(false)) {
+            if (dataFile.get().exists()) {
+                dataFile.get().delete()
+            }
+        } else {
+            val workQueue: WorkQueue = workerExecutor.classLoaderIsolation {
+                classpath.from(rulesClasspath)
+            }
+            workQueue.submit(RunRulesWorkAction::class) {
+                getClassesToCheck().from(sourcesToCheck)
+                getDataOutputFile().set(dataFile)
+                getPriorityOverridesByName().set(this@CheckRulesTask.priorityOverridesByName)
+                getPriorityOverridesByClass().set(this@CheckRulesTask.priorityOverridesByClass)
+                getExcludedRules().set(this@CheckRulesTask.excludedRules)
+                getExcludedRuleClasses().set(this@CheckRulesTask.excludedRuleClasses)
+            }
         }
     }
 }

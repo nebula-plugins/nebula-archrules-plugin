@@ -155,7 +155,7 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
             sourcesToCheck.from(sourceSet.output.classesDirs)
             dependsOn(project.tasks.named(sourceSet.classesTaskName))
             val sourceSetName = sourceSet.name
-            onlyIf { !ext.sourceSetsToSkip.get().contains(sourceSetName) }
+            skip.set(ext.sourceSetsToSkip.map { it.contains(sourceSetName) })
         }
     }
 }

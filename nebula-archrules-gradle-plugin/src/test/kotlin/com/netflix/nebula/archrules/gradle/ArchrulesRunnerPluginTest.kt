@@ -556,7 +556,12 @@ archRules {
 
         assertThat(result.task(":checkArchRulesArchRulesTest"))
             .`as`("archRules run for test source set")
-            .hasOutcome(TaskOutcome.SKIPPED)
+            .hasOutcome(TaskOutcome.SUCCESS)
+
+        val archRulesTestReport = projectDir.resolve("build/reports/archrules/archRulesTest.data")
+        assertThat(archRulesTestReport)
+            .`as`("archRulesTestReport data not created")
+            .doesNotExist()
 
         assertThat(result)
             .hasNoMutableStateWarnings()
@@ -584,8 +589,13 @@ archRules {
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
         assertThat(result.task(":checkArchRulesTest"))
-            .`as`("archRules run for test source set")
-            .hasOutcome(TaskOutcome.SKIPPED)
+            .`as`("tasks for skipped sources set still runs")
+            .hasOutcome(TaskOutcome.SUCCESS)
+
+        val archRulesTestReport = projectDir.resolve("build/reports/archrules/test.data")
+        assertThat(archRulesTestReport)
+            .`as`("skipped sources set data not created")
+            .doesNotExist()
 
         assertThat(result)
             .hasNoMutableStateWarnings()
@@ -922,6 +932,36 @@ archRules {
                 .`as`("enhanced problems output in newer gradle versions")
                 .contains("Solution: Fix critical errors reported in Problems Report")
         }
+    }
+
+    @Test
+    fun `plugin verification with stale skipped reports`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                rawBuildScript(
+                    """
+archRules {
+    failureThreshold("MEDIUM")
+}
+"""
+                )
+            }
+        }
+
+        val result = runner.runAndFail("check", "--stacktrace", "-x", "test")
+
+        assertThat(result.task(":enforceArchRules"))
+            .`as`("verification task fails")
+            .hasOutcome(TaskOutcome.FAILED)
+        projectDir.resolve("build.gradle.kts").appendText("""
+archRules {
+    skipSourceSet("main")
+}
+""")
+        val result2 = runner.run("check", "--stacktrace", "-x", "test")
+        assertThat(result2.task(":enforceArchRules"))
+            .`as`("verification task passes")
+            .hasOutcome(TaskOutcome.SUCCESS)
     }
 
     @Test
