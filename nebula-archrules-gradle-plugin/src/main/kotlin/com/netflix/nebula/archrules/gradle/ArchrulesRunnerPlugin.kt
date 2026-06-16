@@ -119,6 +119,7 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                 attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
                 attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements.CLASSES))
             }
+            shouldResolveConsistentlyWith(configurations.getByName(sourceSet.runtimeClasspathConfigurationName))
         }
 
         tasks.register<CheckRulesTask>("checkArchRules" + sourceSet.name.capitalized()) {
