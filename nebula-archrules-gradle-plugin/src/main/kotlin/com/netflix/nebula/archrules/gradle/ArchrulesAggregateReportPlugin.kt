@@ -8,7 +8,6 @@ import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.VerificationType
 import org.gradle.api.model.ObjectFactory
 import org.gradle.kotlin.dsl.named
-import org.gradle.kotlin.dsl.project
 import org.gradle.kotlin.dsl.register
 import javax.inject.Inject
 
@@ -27,16 +26,15 @@ class ArchrulesAggregateReportPlugin @Inject constructor(val objects: ObjectFact
                 project.dependencies.project(mapOf("path" to it.path))
             }.toTypedArray()
         ).apply { description = "projects to collect archrules data from" }
+        archRulesDataFiles.attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, verification)
+            attribute(VerificationType.VERIFICATION_TYPE_ATTRIBUTE, archRulesVerificationType)
+        }
 
         project.tasks.register<PrintConsoleReportTask>("archRulesAggregateConsoleReport") {
             dataFiles.from(
                 archRulesDataFiles.incoming.artifactView {
-                    withVariantReselection()
                     lenient(true) // to handle the case where a subproject doesn't have archrules runner
-                    attributes {
-                        attribute(Category.CATEGORY_ATTRIBUTE, verification)
-                        attribute(VerificationType.VERIFICATION_TYPE_ATTRIBUTE, archRulesVerificationType)
-                    }
                 }.artifacts.resolvedArtifacts.map {
                     // filter for only artifacts that match the attributes
                     it.filter {
@@ -53,12 +51,7 @@ class ArchrulesAggregateReportPlugin @Inject constructor(val objects: ObjectFact
         project.tasks.register<PrintMarkdownReportTask>("archRulesAggregateMarkdownReport") {
             dataFiles.from(
                 archRulesDataFiles.incoming.artifactView {
-                    withVariantReselection()
                     lenient(true) // to handle the case where a subproject doesn't have archrules runner
-                    attributes {
-                        attribute(Category.CATEGORY_ATTRIBUTE, verification)
-                        attribute(VerificationType.VERIFICATION_TYPE_ATTRIBUTE, archRulesVerificationType)
-                    }
                 }.artifacts.resolvedArtifacts.map {
                     // filter for only artifacts that match the attributes
                     it.filter {

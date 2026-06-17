@@ -1,6 +1,7 @@
 package com.netflix.nebula.archrules.gradle
 
 import com.tngtech.archunit.lang.Priority
+import nebula.test.dsl.ProjectBuilder
 import nebula.test.dsl.TestKitAssertions.assertThat
 import nebula.test.dsl.TestProjectBuilder
 import nebula.test.dsl.main
@@ -14,7 +15,6 @@ import nebula.test.dsl.subProject
 import nebula.test.dsl.testProject
 import nebula.test.dsl.withGradle
 import org.gradle.kotlin.dsl.findByType
-import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -26,17 +26,20 @@ class ArchrulesAggregateReportPluginTest {
     @TempDir
     lateinit var projectDir: File
 
-    private fun TestProjectBuilder.setup(withFailures: Boolean = true) {
+    private fun TestProjectBuilder.multiprojectSetup() {
         properties {
             buildCache(true)
             configurationCache(true)
-            property("org.gradle.unsafe.isolated-projects","true")
+            property("org.gradle.unsafe.isolated-projects", "true")
         }
         rootProject {
             plugins {
                 id("com.netflix.nebula.archrules.aggregate")
             }
         }
+    }
+
+    private fun TestProjectBuilder.libraryProject() {
         subProject("library") {
             plugins {
                 id("java")
@@ -47,7 +50,14 @@ class ArchrulesAggregateReportPluginTest {
                 }
             }
         }
-        subProject("sub1") {
+    }
+
+    private fun TestProjectBuilder.consumerProject(
+        name: String,
+        failingClassName: String? = null,
+        dsl: ProjectBuilder.() -> Unit = {}
+    ) {
+        subProject(name) {
             plugins {
                 id("java")
                 id("com.netflix.nebula.archrules.runner")
@@ -61,37 +71,30 @@ class ArchrulesAggregateReportPluginTest {
             )
             src {
                 main {
-                    if (withFailures) {
-                        exampleDeprecatedUsage("FailingCode1")
+                    if (failingClassName != null) {
+                        exampleDeprecatedUsage(failingClassName)
                     }
                 }
             }
+            dsl()
         }
-        subProject("sub2") {
-            plugins {
-                id("java")
-                id("com.netflix.nebula.archrules.runner")
-            }
-            repositories {
-                mavenCentral()
-            }
-            dependencies(
-                """implementation(project(":library"))""",
-                """archRules("com.netflix.nebula:archrules-deprecation:0.+")"""
-            )
-            src {
-                main {
-                    if (withFailures) {
-                        exampleDeprecatedUsage("FailingCode2")
-                    }
-                }
-            }
+    }
+
+    private fun TestProjectBuilder.setup(withFailures: Boolean = true) {
+        multiprojectSetup()
+        libraryProject()
+        if (withFailures) {
+            consumerProject("sub1", "FailingCode1")
+            consumerProject("sub2", "FailingCode2")
+        } else {
+            consumerProject("sub1")
+            consumerProject("sub2")
         }
     }
 
     @Test
     fun `settings defaults`() {
-        val project = ProjectBuilder.builder().build()
+        val project = org.gradle.testfixtures.ProjectBuilder.builder().build()
         project.plugins.apply("java")
         project.plugins.apply("com.netflix.nebula.archrules.aggregate")
         val extension = project.extensions.findByType<ArchrulesAggregateExtension>()!!
