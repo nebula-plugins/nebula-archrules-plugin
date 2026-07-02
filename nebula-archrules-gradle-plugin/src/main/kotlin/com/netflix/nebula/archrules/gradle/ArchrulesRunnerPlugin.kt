@@ -152,7 +152,7 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                 }
             )
             dataFile.set(archRulesReportDir.map {
-                it.file(sourceSet.name + ".data").asFile
+                it.file(sourceSet.name + ".data")
             })
             sourcesToCheck.from(sourceSet.output.classesDirs)
             dependsOn(project.tasks.named(sourceSet.classesTaskName))
