@@ -4,7 +4,6 @@ import com.netflix.nebula.archrules.gradle.ArchRuleAttribute.ARCH_RULES
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.attributes.Usage
-import org.gradle.api.attributes.java.TargetJvmEnvironment
 import org.gradle.api.component.AdhocComponentWithVariants
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact
 import org.gradle.api.internal.project.ProjectInternal
@@ -18,8 +17,13 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.component.internal.JvmSoftwareComponentInternal
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.add
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.invoke
+import org.gradle.kotlin.dsl.named
+import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.support.serviceOf
+import org.gradle.kotlin.dsl.withType
 import org.gradle.testing.base.TestingExtension
 
 class ArchrulesLibraryPlugin : Plugin<Project> {
@@ -31,20 +35,27 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                 compatibilityRules.add(ArchRuleCompatibilityRule::class)
             }
             val javaExt = project.extensions.getByType<JavaPluginExtension>()
+            val mainSourceSet = javaExt.sourceSets.getByName("main")
             val archRulesSourceSet = javaExt.sourceSets.create("archRules")
             project.configurations.named(archRulesSourceSet.implementationConfigurationName).configure {
                 extendsFrom(project.configurations.getByName(javaExt.sourceSets.getByName("main").implementationConfigurationName))
             }
             project.configurations.named(archRulesSourceSet.runtimeClasspathConfigurationName).configure {
                 attributes {
+                    addAllLater(
+                        project.configurations.named(mainSourceSet.runtimeClasspathConfigurationName).get().attributes
+                    )
+                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
                     attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
-                    attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, project.objects.named(TargetJvmEnvironment.STANDARD_JVM))
                 }
             }
             project.configurations.named(archRulesSourceSet.compileClasspathConfigurationName).configure {
                 attributes {
+                    addAllLater(
+                        project.configurations.named(mainSourceSet.compileClasspathConfigurationName).get().attributes
+                    )
+                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
                     attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
-                    attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, project.objects.named(TargetJvmEnvironment.STANDARD_JVM))
                 }
             }
             project.dependencies.add(
@@ -111,12 +122,14 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                             project.configurations.named(runtimeClasspathConfigurationName).configure {
                                 extendsFrom(project.configurations.getByName(archRulesSourceSet.runtimeClasspathConfigurationName))
                                 attributes {
+                                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
                                     attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
                                 }
                             }
                             project.configurations.named(compileClasspathConfigurationName).configure {
                                 extendsFrom(project.configurations.getByName(archRulesSourceSet.compileClasspathConfigurationName))
                                 attributes {
+                                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
                                     attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
                                 }
                             }
@@ -146,7 +159,7 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                 projectInternal.fileResolver,
                 projectInternal.taskDependencyFactory
             )
-
+            val mainSourceSet = project.extensions.getByType<JavaPluginExtension>().sourceSets.getByName("main")
             project.configurations.consumable("archRulesRuntimeElements") {
                 jvmLanguageUtilities.useDefaultTargetPlatformInference(this, compileJava)
                 jvmPluginServices.configureAsRuntimeElements(this)
@@ -157,8 +170,11 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                 )
                 outgoing.artifacts.add(jarArtifact)
                 attributes {
+                    addAllLater(
+                        project.configurations.named(mainSourceSet.runtimeElementsConfigurationName).get().attributes
+                    )
+                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
                     attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
-                    attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, project.objects.named(TargetJvmEnvironment.STANDARD_JVM))
                 }
             }
             val adhocComponent = component as AdhocComponentWithVariants

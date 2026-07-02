@@ -2,15 +2,13 @@ package com.netflix.nebula.archrules.gradle;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
-import org.gradle.api.provider.ListProperty;
-import org.gradle.api.provider.Property;
+import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.tasks.*;
 import org.gradle.workers.WorkQueue;
 import org.gradle.workers.WorkerExecutor;
 import org.jspecify.annotations.NullMarked;
 
 import javax.inject.Inject;
-import java.io.File;
 
 /**
  * Produces a JSON report of all ArchRules failures
@@ -32,7 +30,7 @@ abstract public class PrintJsonReportTask extends DefaultTask {
      * @return file for output
      */
     @OutputFile
-    abstract public Property<File> getJsonReportFile();
+    abstract public RegularFileProperty getJsonReportFile();
 
     @Classpath
     abstract public ConfigurableFileCollection getReportingClasspath();
@@ -50,7 +48,7 @@ abstract public class PrintJsonReportTask extends DefaultTask {
                         workerSpec.getClasspath().from(getReportingClasspath()));
         workQueue.submit(JsonReportWorkAction.class, parameters -> {
             parameters.getDataFiles().set(getDataFiles());
-            parameters.getJsonReportFile().set(getJsonReportFile());
+            parameters.getJsonReportFile().set(getJsonReportFile().getAsFile());
         });
     }
 }
