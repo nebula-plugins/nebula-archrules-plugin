@@ -9,6 +9,13 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 public interface ArchRuleAttribute extends Named {
+
+    /**
+     * Attribute used to denote an archrules library, and to resolve archrules variants
+     */
+    Attribute<ArchRuleAttribute> ARCH_RULES_ATTRIBUTE =
+            Attribute.of("com.netflix.nebula.archrules", ArchRuleAttribute.class);
+
     /**
      * Used in archrules artifacts to allow them to be selected via the variant selection algorithm
      */
