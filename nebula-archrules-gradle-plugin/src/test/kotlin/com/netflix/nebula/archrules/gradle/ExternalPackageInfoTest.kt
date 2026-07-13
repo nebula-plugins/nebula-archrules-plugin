@@ -26,7 +26,7 @@ class ExternalPackageInfoTest {
         val runner = testProject(projectDir) {
             properties {
                 buildCache(true)
-                property("org.gradle.configuration-cache", "true")
+                configurationCache(true)
             }
             subProject("app") {
                 plugins {
@@ -63,7 +63,7 @@ class Usage {
                     mavenCentral()
                 }
                 dependencies(
-                    """implementation(project(":annotation"))"""
+                    """api(project(":annotation"))"""
                 )
                 javaToolchain(17)
                 src {
@@ -94,7 +94,7 @@ import ann.PackageAnnotation;
                     mavenCentral()
                 }
                 javaToolchain(17)
-                dependencies("""archRulesImplementation("com.netflix.nebula:archrules-common:0.+")""")
+                dependencies("""archRulesImplementation("com.netflix.nebula:archrules-common:1.+")""")
                 src {
                     main {
                         java(
