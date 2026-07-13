@@ -10,6 +10,7 @@ import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
 import org.gradle.api.attributes.VerificationType
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.SourceSet
 import org.gradle.internal.extensions.stdlib.capitalized
@@ -19,30 +20,37 @@ import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
+import javax.inject.Inject
 
-class ArchrulesRunnerPlugin : Plugin<Project> {
+class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Plugin<Project> {
     companion object {
-        private const val ARCHRULES_VERSION = "0.+" // keep in sync
+        private const val ARCHRULES_VERSION = "1.+" // keep in sync
         private const val JACKSON_VERSION = "3.1.0" // keep in sync with compileOnly dependency
         private const val ARCHRULES_DEPENDENCY = "com.netflix.nebula:nebula-archrules-gradle-plugin:$ARCHRULES_VERSION"
         private const val JACKSON_DEPENDENCY = "tools.jackson.core:jackson-databind:$JACKSON_VERSION"
     }
+
     override fun apply(project: Project) {
         val archRulesReportDir = project.layout.buildDirectory.dir("reports/archrules")
+        val archRulesUsageAttr = objects.named(Usage::class.java, ARCH_RULES)
         project.configurations.register("archRules") {
             isCanBeConsumed = false
             isCanBeResolved = true
             attributes {
-                attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
-                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
-                attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named<Category>(Category.LIBRARY))
-                attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling.EXTERNAL))
+                attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, objects.named(ARCH_RULES))
+                attribute(Usage.USAGE_ATTRIBUTE, archRulesUsageAttr)
+                attribute(Category.CATEGORY_ATTRIBUTE, objects.named<Category>(Category.LIBRARY))
+                attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
             }
         }
         project.plugins.withId("java") {
             project.dependencies.attributesSchema.attribute(Usage.USAGE_ATTRIBUTE) {
-                compatibilityRules.add(ArchRuleCompatibilityRule::class)
-                disambiguationRules.add(ArchRuleDisambiguationRule::class)
+                compatibilityRules.add(ArchRuleUsageCompatibilityRule::class)
+                disambiguationRules.add(ArchRuleUsageDisambiguationRule::class) {
+                    params(project.objects.named(Usage::class.java, Usage.JAVA_API))
+                    params(project.objects.named(Usage::class.java, Usage.JAVA_RUNTIME))
+                    params(archRulesUsageAttr)
+                }
             }
 
             val archRulesExt = project.extensions.create<ArchrulesExtension>("archRules")
@@ -60,10 +68,12 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
             val jsonReportTask = project.tasks.register<PrintJsonReportTask>("archRulesJsonReport") {
                 dataFiles.from(project.tasks.withType<CheckRulesTask>())
                 getJsonReportFile().set(archRulesReportDir.map { it.file("report.json") })
-                reportingClasspath.setFrom(project.configurations.detachedConfiguration(
-                    project.dependencies.create(ARCHRULES_DEPENDENCY),
-                    project.dependencies.create(JACKSON_DEPENDENCY)
-                ))
+                reportingClasspath.setFrom(
+                    project.configurations.detachedConfiguration(
+                        project.dependencies.create(ARCHRULES_DEPENDENCY),
+                        project.dependencies.create(JACKSON_DEPENDENCY)
+                    )
+                )
                 onlyIf { archRulesExt.jsonReportEnabled.get() }
             }
 
@@ -85,7 +95,7 @@ class ArchrulesRunnerPlugin : Plugin<Project> {
                 description = "Report data for ArchRules"
                 outgoing.artifacts(
                     project.provider { (project.tasks.withType<CheckRulesTask>().flatMap { it.outputs.files }) }
-                ){
+                ) {
                     type = ArtifactTypeDefinition.BINARY_DATA_TYPE
                     builtBy(project.tasks.withType<CheckRulesTask>())
                 }

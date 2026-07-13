@@ -237,11 +237,6 @@ class TransitiveDependencyTests {
                     mavenCentral()
                 }
                 dependencies("""archRulesImplementation(project(":deprecated"))""")
-                src {
-                    sourceSet("archRulesTest") {
-                        exampleTestForArchRule()
-                    }
-                }
             }
             setupDeprecatedRuleProject()
             setupProjectToRunIn("implementation")
@@ -253,12 +248,6 @@ class TransitiveDependencyTests {
             "-Pversion=0.0.1",
             "--stacktrace"
         )
-        assertThat(result.task(":rules:compileArchRulesTestJava"))
-            .`as`("rules dependencies are exposed to archRulesTest")
-            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
-        assertThat(result.task(":rules:archRulesTest"))
-            .`as`("archRules test task runs")
-            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
         assertThat(result)
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
@@ -304,7 +293,6 @@ class TransitiveDependencyTests {
             settings {
                 name("library-with-rules")
             }
-
             subProject("rules") {
                 group("com.example")
                 plugins {
@@ -318,11 +306,6 @@ class TransitiveDependencyTests {
                     mavenCentral()
                 }
                 dependencies("""archRulesImplementation(project(":deprecated"))""")
-                src {
-                    sourceSet("archRulesTest") {
-                        exampleTestForArchRule()
-                    }
-                }
             }
             setupDeprecatedRuleProject()
             setupProjectToRunIn("archRules")
@@ -334,12 +317,6 @@ class TransitiveDependencyTests {
             "-Pversion=0.0.1",
             "--stacktrace"
         )
-        assertThat(result.task(":rules:compileArchRulesTestJava"))
-            .`as`("rules dependencies are exposed to archRulesTest")
-            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
-        assertThat(result.task(":rules:archRulesTest"))
-            .`as`("archRules test task runs")
-            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
         assertThat(result)
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()

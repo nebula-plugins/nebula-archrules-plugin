@@ -7,6 +7,7 @@ import org.gradle.api.attributes.Usage
 import org.gradle.api.component.AdhocComponentWithVariants
 import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact
 import org.gradle.api.internal.project.ProjectInternal
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.plugins.internal.JavaConfigurationVariantMapping
 import org.gradle.api.plugins.jvm.JvmTestSuite
@@ -25,13 +26,23 @@ import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.support.serviceOf
 import org.gradle.kotlin.dsl.withType
 import org.gradle.testing.base.TestingExtension
+import javax.inject.Inject
 
-class ArchrulesLibraryPlugin : Plugin<Project> {
+class ArchrulesLibraryPlugin @Inject constructor(val objects: ObjectFactory) : Plugin<Project> {
 
     override fun apply(project: Project) {
         val version = determineVersion()
+        val archRulesUsageAttr = objects.named(Usage::class.java, ARCH_RULES)
         project.pluginManager.withPlugin("java") {
             project.dependencies.attributesSchema.attribute(Usage.USAGE_ATTRIBUTE) {
+                compatibilityRules.add(ArchRuleUsageCompatibilityRule::class)
+                disambiguationRules.add(ArchRuleUsageDisambiguationRule::class){
+                    params(objects.named(Usage::class.java, Usage.JAVA_API))
+                    params(objects.named(Usage::class.java, Usage.JAVA_RUNTIME))
+                    params(archRulesUsageAttr)
+                }
+            }
+            project.dependencies.attributesSchema.attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE) {
                 compatibilityRules.add(ArchRuleCompatibilityRule::class)
             }
             val javaExt = project.extensions.getByType<JavaPluginExtension>()
@@ -45,8 +56,8 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                     addAllLater(
                         project.configurations.named(mainSourceSet.runtimeClasspathConfigurationName).get().attributes
                     )
-                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
-                    attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, objects.named(ARCH_RULES))
+                    attribute(Usage.USAGE_ATTRIBUTE, archRulesUsageAttr)
                 }
             }
             project.configurations.named(archRulesSourceSet.compileClasspathConfigurationName).configure {
@@ -54,8 +65,8 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                     addAllLater(
                         project.configurations.named(mainSourceSet.compileClasspathConfigurationName).get().attributes
                     )
-                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
-                    attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, objects.named(ARCH_RULES))
+                    attribute(Usage.USAGE_ATTRIBUTE,archRulesUsageAttr)
                 }
             }
             project.dependencies.add(
@@ -122,15 +133,15 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                             project.configurations.named(runtimeClasspathConfigurationName).configure {
                                 extendsFrom(project.configurations.getByName(archRulesSourceSet.runtimeClasspathConfigurationName))
                                 attributes {
-                                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
-                                    attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, objects.named(ARCH_RULES))
+                                    // don't override Usage in order to not mess with junit platform engine dependencies
                                 }
                             }
                             project.configurations.named(compileClasspathConfigurationName).configure {
                                 extendsFrom(project.configurations.getByName(archRulesSourceSet.compileClasspathConfigurationName))
                                 attributes {
-                                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
-                                    attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, objects.named(ARCH_RULES))
+                                    // don't override Usage in order to not mess with junit platform engine dependencies
                                 }
                             }
                         }
@@ -173,8 +184,8 @@ class ArchrulesLibraryPlugin : Plugin<Project> {
                     addAllLater(
                         project.configurations.named(mainSourceSet.runtimeElementsConfigurationName).get().attributes
                     )
-                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
-                    attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                    attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, objects.named(ARCH_RULES))
+                    attribute(Usage.USAGE_ATTRIBUTE, objects.named(ARCH_RULES))
                 }
             }
             val adhocComponent = component as AdhocComponentWithVariants
