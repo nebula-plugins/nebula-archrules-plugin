@@ -201,16 +201,19 @@ Any rules which fail with that priority or higher will cause the build to fail. 
 
 ## Reporting
 
-The plugin can generate JSON, markdown, and console reports. All are enabled by default. Each can be disabled:
+The plugin can generate JSON, markdown, console, and github annotation reports. GitHub annotations are disabled by default, the rest are enabled by default. Each can be configured:
 ```kotlin
 archRules {
     consoleReportEnabled = false
     jsonReportEnabled = false
     markdownReportEnabled = false
+    githubReportEnabled = true
 }
 ```
 
-You can also disable printing summary lines for passing rules to reduce noise:
+If you have multiple checks in GitHub Actions, you may want to enable the GitHub annotations for only one of them to avoid duplicates, so you may also enable the GitHub annotations via gradle property on the command line `-Parchrules.github.enabled=true`, or by directly requesting the `archRulesGithubReport` task on the command line.
+
+You can disable printing summary lines for passing rules to reduce noise:
 ```kotlin
 archRules {
     skipPassingSummaries = true

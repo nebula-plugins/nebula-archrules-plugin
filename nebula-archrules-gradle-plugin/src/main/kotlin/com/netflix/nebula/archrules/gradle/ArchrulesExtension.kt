@@ -23,6 +23,11 @@ abstract class ArchrulesExtension {
     abstract val markdownReportEnabled: Property<Boolean>
 
     /**
+     * set to true to enable the github report
+     */
+    abstract val githubReportEnabled: Property<Boolean>
+
+    /**
      * Skip printing lines in the console report summary for passing rules
      */
     abstract val skipPassingSummaries: Property<Boolean>
