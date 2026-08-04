@@ -106,3 +106,15 @@ kotlin {
         languageVersion.set(KotlinVersion.KOTLIN_2_1)
     }
 }
+
+// temporary until the version of archrules this project applies has an aligned archunit version
+configurations.named("mainArchRulesRuntime"){
+    resolutionStrategy {
+        force("com.tngtech.archunit:archunit:1.4.2")
+    }
+}
+configurations.named("testArchRulesRuntime"){
+    resolutionStrategy {
+        force("com.tngtech.archunit:archunit:1.4.2")
+    }
+}

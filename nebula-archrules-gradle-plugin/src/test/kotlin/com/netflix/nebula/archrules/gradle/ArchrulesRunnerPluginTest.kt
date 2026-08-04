@@ -930,7 +930,7 @@ archRules {
         if (gradleVersion != SupportedGradleVersion.GRADLE_9_1) {
             assertThat(result.output)
                 .`as`("enhanced problems output in newer gradle versions")
-                .contains("Solution: Fix critical errors reported in Problems Report")
+                .containsIgnoringCase("solution: Fix critical errors reported in Problems Report")
         }
     }
 
