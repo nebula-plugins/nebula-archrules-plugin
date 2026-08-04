@@ -69,16 +69,16 @@ class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Pl
                 .configureEach {
                     project.configureCheckTaskForSourceSet(this, archRulesExt)
                 }
-
+            val archrulesJsonReportingClasspath =  project.configurations.detachedConfiguration(
+                project.dependencies.create(ARCHRULES_DEPENDENCY),
+                project.dependencies.create(JACKSON_DEPENDENCY)
+            ).apply {
+                description = "Created by ArchrulesRunnerPlugin to use Jackson in reporting"
+            }
             val jsonReportTask = project.tasks.register<PrintJsonReportTask>("archRulesJsonReport") {
                 dataFiles.from(project.tasks.withType<CheckRulesTask>())
                 getJsonReportFile().set(archRulesReportDir.map { it.file("report.json") })
-                reportingClasspath.setFrom(
-                    project.configurations.detachedConfiguration(
-                        project.dependencies.create(ARCHRULES_DEPENDENCY),
-                        project.dependencies.create(JACKSON_DEPENDENCY)
-                    )
-                )
+                reportingClasspath.setFrom(archrulesJsonReportingClasspath)
                 onlyIf { archRulesExt.jsonReportEnabled.get() }
             }
 
@@ -98,14 +98,15 @@ class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Pl
 
             val javaExt = project.extensions.getByType(JavaPluginExtension::class.java)
             val githubRequested = project.gradle.startParameter.taskRequests.any {
-                (it.projectPath == project.path || (project == project.rootProject && it.projectPath == null)) && it.args.contains("archRulesGithubReport")
+                (it.projectPath == project.path || it.projectPath == null) && it.args.contains("archRulesGithubReport")
             }
             val githubReportTask = project.tasks.register<GithubReportTask>("archRulesGithubReport") {
                 dataFiles.from(project.tasks.withType<CheckRulesTask>())
-                githubReportFile.set(archRulesReportDir.map { it.file("github-annotations.txt") })
+                githubReportFile.set(archRulesReportDir.map { it.file("github-annotations.json") })
                 sourceFiles.from(javaExt.sourceSets.flatMap { it.allSource })
-                projectRoot.set(project.layout.projectDirectory)
+                projectRoot.set(project.rootProject.layout.projectDirectory)
                 detailsThreshold.set(archRulesExt.consoleDetailsThreshold)
+                reportingClasspath.setFrom(archrulesJsonReportingClasspath)
                 onlyIf { archRulesExt.githubReportEnabled.get() || githubRequested }
             }
 
