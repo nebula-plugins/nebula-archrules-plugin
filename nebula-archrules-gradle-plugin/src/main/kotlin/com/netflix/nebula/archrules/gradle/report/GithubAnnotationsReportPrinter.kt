@@ -39,7 +39,8 @@ class GithubAnnotationsReportPrinter(
     override fun printRuleViolationDetail(result: RuleResult) {
         val level = when (result.rule().priority()) {
             Priority.LOW -> "notice"
-            else -> "warning"
+            Priority.MEDIUM -> "warning"
+            Priority.HIGH -> "error"
         }
         val location = result.message().substringAfterLast("in (").substringBefore(")")
         val fileName = location.split(":")[0]
