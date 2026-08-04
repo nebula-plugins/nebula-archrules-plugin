@@ -58,6 +58,11 @@ class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Pl
             archRulesExt.jsonReportEnabled.convention(true)
             archRulesExt.markdownReportEnabled.convention(true)
             archRulesExt.skipPassingSummaries.convention(false)
+            archRulesExt.githubReportEnabled.convention(
+                project.providers.gradleProperty("archrules.github.enabled")
+                    .map { it == "true" }
+                    .orElse(false)
+            )
             archRulesExt.sourceSetsToSkip.add("archRulesTest")
             archRulesExt.consoleDetailsThreshold.convention(Priority.MEDIUM)
             project.extensions.getByType<JavaPluginExtension>().sourceSets
@@ -91,6 +96,19 @@ class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Pl
                 onlyIf { archRulesExt.markdownReportEnabled.get() }
             }
 
+            val javaExt = project.extensions.getByType(JavaPluginExtension::class.java)
+            val githubRequested = project.gradle.startParameter.taskRequests.any {
+                (it.projectPath == project.path || (project == project.rootProject && it.projectPath == null)) && it.args.contains("archRulesGithubReport")
+            }
+            val githubReportTask = project.tasks.register<GithubReportTask>("archRulesGithubReport") {
+                dataFiles.from(project.tasks.withType<CheckRulesTask>())
+                githubReportFile.set(archRulesReportDir.map { it.file("github-annotations.txt") })
+                sourceFiles.from(javaExt.sourceSets.flatMap { it.allSource })
+                projectRoot.set(project.layout.projectDirectory)
+                detailsThreshold.set(archRulesExt.consoleDetailsThreshold)
+                onlyIf { archRulesExt.githubReportEnabled.get() || githubRequested }
+            }
+
             project.configurations.consumable("archRulesReportElements") {
                 description = "Report data for ArchRules"
                 outgoing.artifacts(
@@ -113,7 +131,7 @@ class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Pl
 
             project.tasks.named("check") {
                 dependsOn(enforceTask)
-                finalizedBy(jsonReportTask, markdownReportTask, consoleReportTask)
+                finalizedBy(jsonReportTask, markdownReportTask, consoleReportTask, githubReportTask)
             }
         }
     }

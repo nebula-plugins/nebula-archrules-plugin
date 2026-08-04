@@ -154,6 +154,10 @@ class ArchrulesRunnerPluginTest {
             .`as`("archRules console report runs by default")
             .hasOutcome(TaskOutcome.SUCCESS)
 
+        assertThat(result.task(":archRulesGithubReport"))
+            .`as`("github report is disabled by default")
+            .hasOutcome(TaskOutcome.SKIPPED)
+
         assertThat(result.task(":enforceArchRules"))
             .`as`("verification runs but does not fail the build")
             .hasOutcome(TaskOutcome.SUCCESS)
@@ -379,6 +383,94 @@ archRules {
             .doesNotExist()
     }
 
+    @Test
+    fun `github report can be enabled via extension`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                rawBuildScript(
+                    """
+archRules {
+    githubReportEnabled = true
+}
+"""
+                )
+            }
+        }
+
+        val result = runner.run("check", "--stacktrace", "-x", "test")
+
+        assertThat(result.task(":archRulesGithubReport"))
+            .`as`("github report task runs")
+            .hasOutcome(TaskOutcome.SUCCESS)
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+
+        assertThat(result.output)
+            .`as`("filtered details message is printed")
+            .contains("::notice file=src/main/java/com/example/consumer/FailingCode.java")
+        val githubReport = projectDir.resolve("build/reports/archrules/github-annotations.txt")
+        assertThat(githubReport)
+            .`as`("github report file created")
+            .exists()
+            .content()
+            .contains("::notice file=src/main/java/com/example/consumer/FailingCode.java")
+    }
+
+    @Test
+    fun `github report can be enabled via property`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject()
+        }
+
+        val result = runner.run("check", "--stacktrace", "-x", "test", "-Parchrules.github.enabled=true")
+
+        assertThat(result.task(":archRulesGithubReport"))
+            .`as`("github report task runs")
+            .hasOutcome(TaskOutcome.SUCCESS)
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+
+        assertThat(result.output)
+            .`as`("filtered details message is printed")
+            .contains("::notice file=src/main/java/com/example/consumer/FailingCode.java")
+        val githubReport = projectDir.resolve("build/reports/archrules/github-annotations.txt")
+        assertThat(githubReport)
+            .`as`("github report file created")
+            .exists()
+            .content()
+            .contains("::notice file=src/main/java/com/example/consumer/FailingCode.java")
+    }
+
+    @Test
+    fun `github report can be enabled via direct request`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject()
+        }
+
+        val result = runner.run("archRulesGithubReport", "--stacktrace")
+
+        assertThat(result.task(":archRulesGithubReport"))
+            .`as`("github report task runs")
+            .hasOutcome(TaskOutcome.SUCCESS)
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+
+        assertThat(result.output)
+            .`as`("filtered details message is printed")
+            .contains("::notice file=src/main/java/com/example/consumer/FailingCode.java")
+        val githubReport = projectDir.resolve("build/reports/archrules/github-annotations.txt")
+        assertThat(githubReport)
+            .`as`("github report file created")
+            .exists()
+            .content()
+            .contains("::notice file=src/main/java/com/example/consumer/FailingCode.java")
+    }
 
     @ParameterizedTest
     @EnumSource(SupportedGradleVersion::class)
