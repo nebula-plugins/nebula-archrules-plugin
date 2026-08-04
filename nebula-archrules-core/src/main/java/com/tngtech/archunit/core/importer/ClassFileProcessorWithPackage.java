@@ -110,6 +110,12 @@ public class ClassFileProcessorWithPackage extends ClassFileProcessor {
         }
 
         @Override
+        public void onDeclaredPermittedSubclasses(List<String> permittedSubclassNames) {
+            importRecord.addPermittedSubclasses(ownerName, permittedSubclassNames);
+            dependencyResolutionProcess.registerPermittedSubclasses(permittedSubclassNames);
+        }
+
+        @Override
         public void onDeclaredTypeParameters(DomainBuilders.JavaClassTypeParametersBuilder typeParametersBuilder) {
             importRecord.addTypeParameters(ownerName, typeParametersBuilder);
         }

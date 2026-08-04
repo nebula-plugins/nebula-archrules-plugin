@@ -3,8 +3,8 @@ plugins {
 }
 tasks.wrapper {
     distributionType = Wrapper.DistributionType.ALL // ALL helps when debugging gradle plugins
-    gradleVersion = "9.5.0"
-    distributionSha256Sum = "a3c4ba4aca8f0075688b9c5b18939fd28e8cb4357c227da5c1d9f38343791439"
+    gradleVersion = "9.6.1"
+    distributionSha256Sum = "61ba77b3ff7167e60962763eb4bae79db7120c189b9544358d0ade3c1e712a83"
 }
 dependencyLocking {
     lockAllConfigurations()

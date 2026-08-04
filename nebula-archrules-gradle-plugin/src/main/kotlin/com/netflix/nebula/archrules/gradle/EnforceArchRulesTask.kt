@@ -55,7 +55,6 @@ abstract class EnforceArchRulesTask : DefaultTask() {
             results.forEach { result ->
                 val problem = problems.reporter.create(id) {
                     details(result.message)
-                    severity(priorityToSeverity(rule.priority))
                     solution(result.rule.description)
                 }
                 problems.reporter.report(problem)
@@ -66,7 +65,6 @@ abstract class EnforceArchRulesTask : DefaultTask() {
         if (criticalFailures.isNotEmpty()) {
             val id = ProblemId.create("ArchRules", "ArchRules Critical Failure", ArchRulesProblems.ARCH_RULES)
             val problem = problems.reporter.create(id) {
-                severity(Severity.ERROR)
                 solution("Fix critical errors reported in Problems Report")
             }
             problems.reporter.throwing(

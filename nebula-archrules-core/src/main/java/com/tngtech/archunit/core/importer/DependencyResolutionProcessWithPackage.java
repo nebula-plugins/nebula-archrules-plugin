@@ -57,6 +57,11 @@ public class DependencyResolutionProcessWithPackage {
     private final int maxRunsForPackageInfo = getConfiguredIterations(
             MAX_ITERATIONS_FOR_PACKAGE_INFO_PROPERTY_NAME, MAX_ITERATIONS_FOR_PACKAGE_INFO_DEFAULT_VALUE);
 
+    static final String MAX_ITERATIONS_FOR_PERMITTED_SUBCLASSES_PROPERTY_NAME = "maxIterationsForPermittedSubclasses";
+    static final int MAX_ITERATIONS_FOR_PERMITTED_SUBCLASSES_DEFAULT_VALUE = -1;
+    private final int maxRunsForPermittedSubclasses = this.getConfiguredIterations(
+            MAX_ITERATIONS_FOR_PERMITTED_SUBCLASSES_PROPERTY_NAME, MAX_ITERATIONS_FOR_PERMITTED_SUBCLASSES_DEFAULT_VALUE);
+
     private Set<String> currentTypeNames = new HashSet<>();
     private int runNumber = 1;
     private boolean shouldContinue;
@@ -153,5 +158,17 @@ public class DependencyResolutionProcessWithPackage {
 
     private int getConfiguredIterations(String propertyName, int defaultValue) {
         return Integer.parseInt(resolutionProcessProperties.getProperty(propertyName, String.valueOf(defaultValue)));
+    }
+
+    void registerPermittedSubclass(String typeName) {
+        if (this.runNumberHasNotExceeded(this.maxRunsForPermittedSubclasses)) {
+            this.currentTypeNames.add(typeName);
+        }
+    }
+
+    void registerPermittedSubclasses(Collection<String> typeNames) {
+        for(String typeName : typeNames) {
+            this.registerPermittedSubclass(typeName);
+        }
     }
 }
