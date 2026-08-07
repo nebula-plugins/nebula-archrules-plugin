@@ -7,9 +7,9 @@ import org.gradle.api.attributes.CompatibilityCheckDetails
 /**
  * This allows resolution to occur in archrules classpaths where a library does not provide archrules
  */
-class ArchRuleCompatibilityRule : AttributeCompatibilityRule<ArchRuleAttribute> {
-    override fun execute(t: CompatibilityCheckDetails<ArchRuleAttribute>) {
-        if (t.consumerValue?.name == ARCH_RULES && (t.producerValue == null || t.producerValue?.name == t.consumerValue?.name)) {
+class ArchRuleCompatibilityRule : AttributeCompatibilityRule<String> {
+    override fun execute(t: CompatibilityCheckDetails<String>) {
+        if (t.consumerValue == ARCH_RULES && (t.producerValue == null || t.producerValue == t.consumerValue)) {
             t.compatible()
         } else {
             t.incompatible()

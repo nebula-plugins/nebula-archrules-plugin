@@ -12,6 +12,7 @@ dependencies {
 
     testImplementation("net.javacrumbs.json-unit:json-unit-assertj:5.0.0")
     testImplementation("org.json:json:20250517")
+    testImplementation("net.lingala.zip4j:zip4j:2.11.5")
 }
 gradlePlugin {
     plugins {

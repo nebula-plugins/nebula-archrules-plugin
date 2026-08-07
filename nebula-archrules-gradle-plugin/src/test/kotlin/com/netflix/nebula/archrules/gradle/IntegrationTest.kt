@@ -162,9 +162,6 @@ internal class IntegrationTest {
                 buildCache(true)
             }
             projectWithRules {
-                plugins {
-                    id("com.google.protobuf").version("0.9.6")
-                }
                 dependencies("""implementation("com.netflix.nebula:archrules-deprecation:latest.release")""")
             }
             projectWithCodeUsingDeprecatedCode {

@@ -24,12 +24,12 @@ class VariantSelectionTest {
         /**
          * This version was published with only the Usage attribute, and not the custom arch rules attribute
          */
-        private const val RULES_USAGE_ONLY = """implementation("com.netflix.nebula:archrules-deprecation:1.0.1")"""
+        private const val RULES_USAGE_ONLY = """api("com.netflix.nebula:archrules-deprecation:1.0.1")"""
 
         /**
          * This version was published with Usage and custom attributes
          */
-        private const val RULES_BOTH = """implementation("com.netflix.nebula:archrules-deprecation:0.11.2")"""
+        private const val RULES_BOTH = """api("com.netflix.nebula:archrules-deprecation:0.11.2")"""
     }
 
     @Test

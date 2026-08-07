@@ -33,16 +33,7 @@ class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Pl
     override fun apply(project: Project) {
         val archRulesReportDir = project.layout.buildDirectory.dir("reports/archrules")
         val archRulesUsageAttr = objects.named(Usage::class.java, ARCH_RULES)
-        project.configurations.register("archRules") {
-            isCanBeConsumed = false
-            isCanBeResolved = true
-            attributes {
-                attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, objects.named(ARCH_RULES))
-                attribute(Usage.USAGE_ATTRIBUTE, archRulesUsageAttr)
-                attribute(Category.CATEGORY_ATTRIBUTE, objects.named<Category>(Category.LIBRARY))
-                attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
-            }
-        }
+        project.configurations.dependencyScope("archRules")
         project.plugins.withId("java") {
             project.dependencies.attributesSchema.attribute(Usage.USAGE_ATTRIBUTE) {
                 compatibilityRules.add(ArchRuleUsageCompatibilityRule::class)
@@ -69,7 +60,7 @@ class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Pl
                 .configureEach {
                     project.configureCheckTaskForSourceSet(this, archRulesExt)
                 }
-            val archrulesJsonReportingClasspath =  project.configurations.detachedConfiguration(
+            val archrulesJsonReportingClasspath = project.configurations.detachedConfiguration(
                 project.dependencies.create(ARCHRULES_DEPENDENCY),
                 project.dependencies.create(JACKSON_DEPENDENCY)
             ).apply {
@@ -135,6 +126,15 @@ class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Pl
                 finalizedBy(jsonReportTask, markdownReportTask, consoleReportTask, githubReportTask)
             }
         }
+
+        // workaround for https://github.com/google/protobuf-gradle-plugin/issues/794
+        project.pluginManager.withPlugin("com.google.protobuf") {
+            project.configurations.configureEach {
+                if (name.endsWith("compileProtoPath") || name.endsWith("CompileProtoPath")) {
+                    attributes.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named<Category>(Category.LIBRARY))
+                }
+            }
+        }
     }
 
     fun Project.configureCheckTaskForSourceSet(sourceSet: SourceSet, ext: ArchrulesExtension) {
@@ -146,10 +146,11 @@ class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Pl
             )
             attributes.addAllLater(project.configurations.getByName(sourceSet.compileClasspathConfigurationName).attributes)
             attributes {
-                attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, project.objects.named(ARCH_RULES))
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements.CLASSES_AND_RESOURCES))
+                attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, ARCH_RULES)
                 attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
-                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements.CLASSES))
             }
+
             shouldResolveConsistentlyWith(configurations.getByName(sourceSet.compileClasspathConfigurationName))
         }
 
