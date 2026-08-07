@@ -8,10 +8,10 @@ import nebula.test.dsl.main
 import nebula.test.dsl.plugins
 import nebula.test.dsl.properties
 import nebula.test.dsl.repositories
-import nebula.test.dsl.rootProject
 import nebula.test.dsl.run
 import nebula.test.dsl.runAndFail
 import nebula.test.dsl.settings
+import nebula.test.dsl.sourceSet
 import nebula.test.dsl.src
 import nebula.test.dsl.subProject
 import nebula.test.dsl.test
@@ -36,19 +36,14 @@ class ArchrulesRunnerPluginTest {
     lateinit var projectDir: File
 
     companion object {
-        const val LOW_FAILURE_DETAILS =
-            "Method <com.example.consumer.FailingCode.aMethod()> calls method <com.example.library.LibraryClass.deprecatedApi()> in (FailingCode.java"
-        const val MEDIUM_FAILURE_DETAILS =
-            "Method <com.example.consumer.FailingCode.forRemovalMethod()> calls method <com.example.library.LibraryClass.deprecatedForRemovalApi()> in (FailingCode.java"
         const val FILTERED_DETAILS_NOTE = "Note: In order to see details"
         const val LOW_PASSING_SUMMARY = "LOW        (No failures)"
+        const val LIBRARY_ONLY_PROJECT = "library-only"
+        const val RULES_ONLY_PROJECT = "rules-only"
+        const val LIBRARY_WITH_RULES_PROJECT = "library-with-rules"
     }
 
-    fun TestProjectBuilder.setupConsumerProject(
-        ruleDependency: Boolean = true,
-        setupSources: Boolean = true,
-        additionalConfig: nebula.test.dsl.ProjectBuilder.() -> Unit = {}
-    ) {
+    fun TestProjectBuilder.setupConsumerProject(additionalConfig: nebula.test.dsl.ProjectBuilder.() -> Unit = {}) {
         properties {
             buildCache(true)
             configurationCache(true)
@@ -56,31 +51,52 @@ class ArchrulesRunnerPluginTest {
         settings {
             name("consumer")
         }
-        rootProject {
+        subProject(RULES_ONLY_PROJECT) {
+            libraryWithRulesProject()
+            src {
+                sourceSet("archRules") {
+                    dontUseRules()
+                }
+            }
+        }
+        subProject(LIBRARY_ONLY_PROJECT) {
+            libraryWithRulesProject()
+            src {
+                main {
+                    dontUseAnnotation("Low")
+                    dontUseAnnotation("Medium")
+                    dontUseAnnotation("High")
+                    dontUseApi("Low")
+                    dontUseApi("Medium")
+                    dontUseApi("High")
+                }
+            }
+        }
+        subProject(LIBRARY_WITH_RULES_PROJECT) {
+            libraryWithRulesProject()
+            src {
+                main {
+                    dontUseAnnotation("Low")
+                    dontUseAnnotation("Medium")
+                    dontUseAnnotation("High")
+                    dontUseApi("Low")
+                    dontUseApi("Medium")
+                    dontUseApi("High")
+                }
+                sourceSet("archRules") {
+                    dontUseRules()
+                }
+            }
+        }
+        subProject("consumer") {
             plugins {
                 id("java")
                 id("com.netflix.nebula.archrules.runner")
             }
             repositories {
-                mavenCentral()
-            }
-            if (ruleDependency) {
-                dependencies(
-                    """archRules("com.netflix.nebula:archrules-deprecation:0.+")"""
-                )
+                mavenCentral() // needed to resolve reporting classpaths
             }
             additionalConfig.invoke(this)
-            if (setupSources) {
-                src {
-                    main {
-                        exampleLibraryClass()
-                        exampleDeprecatedUsage()
-                    }
-                    test {
-                        exampleDeprecatedUsage("FailingCodeTest")
-                    }
-                }
-            }
         }
     }
 
@@ -126,7 +142,21 @@ class ArchrulesRunnerPluginTest {
     @EnumSource(SupportedGradleVersion::class)
     fun `plugin checks each sourceset`(gradleVersion: SupportedGradleVersion) {
         val runner = testProject(projectDir) {
-            setupConsumerProject()
+            setupConsumerProject {
+                dependencies(
+                    """archRules(project(":$RULES_ONLY_PROJECT"))""",
+                    """implementation(project(":$LIBRARY_ONLY_PROJECT"))""",
+                    """testImplementation(project(":$LIBRARY_ONLY_PROJECT"))"""
+                )
+                src {
+                    main {
+                        dontUseUsage("Medium")
+                    }
+                    test {
+                        dontUseUsage("Low")
+                    }
+                }
+            }
         }
 
         val result = runner.run("check", "--stacktrace", "-x", "test") {
@@ -134,31 +164,31 @@ class ArchrulesRunnerPluginTest {
             forwardOutput()
         }
 
-        assertThat(result.task(":checkArchRulesMain"))
+        assertThat(result.task(":consumer:checkArchRulesMain"))
             .`as`("archRules run for main source set")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        assertThat(result.task(":checkArchRulesTest"))
+        assertThat(result.task(":consumer:checkArchRulesTest"))
             .`as`("archRules run for test source set")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        assertThat(result.task(":archRulesJsonReport"))
+        assertThat(result.task(":consumer:archRulesJsonReport"))
             .`as`("archRules json report runs by default")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        assertThat(result.task(":archRulesMarkdownReport"))
+        assertThat(result.task(":consumer:archRulesMarkdownReport"))
             .`as`("archRules markdown report runs by default")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        assertThat(result.task(":archRulesConsoleReport"))
+        assertThat(result.task(":consumer:archRulesConsoleReport"))
             .`as`("archRules console report runs by default")
             .hasOutcome(TaskOutcome.SUCCESS)
 
-        assertThat(result.task(":archRulesGithubReport"))
+        assertThat(result.task(":consumer:archRulesGithubReport"))
             .`as`("github report is disabled by default")
             .hasOutcome(TaskOutcome.SKIPPED)
 
-        assertThat(result.task(":enforceArchRules"))
+        assertThat(result.task(":consumer:enforceArchRules"))
             .`as`("verification runs but does not fail the build")
             .hasOutcome(TaskOutcome.SUCCESS)
 
@@ -166,26 +196,26 @@ class ArchrulesRunnerPluginTest {
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
 
-        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        val mainReport = projectDir.resolve("consumer/build/reports/archrules/main.data")
         assertThat(mainReport)
             .`as`("Main data created")
             .exists()
         val mainErrors = readDetails(mainReport)
         assertThat(mainErrors).hasSize(3)
 
-        val testReport = projectDir.resolve("build/reports/archrules/test.data")
+        val testReport = projectDir.resolve("consumer/build/reports/archrules/test.data")
         assertThat(testReport)
             .`as`("Test data created")
             .exists()
         val testErrors = readDetails(testReport)
-        assertThat(testErrors).hasSize(2)
+        assertThat(testErrors).hasSize(3)
 
-        val jsonReport = projectDir.resolve("build/reports/archrules/report.json")
+        val jsonReport = projectDir.resolve("consumer/build/reports/archrules/report.json")
         assertThat(jsonReport)
             .`as`("json report created")
             .exists()
 
-        val markdownReport = projectDir.resolve("build/reports/archrules/report.md")
+        val markdownReport = projectDir.resolve("consumer/build/reports/archrules/report.md")
         assertThat(markdownReport)
             .`as`("markdown report is created")
             .exists()
@@ -202,11 +232,11 @@ class ArchrulesRunnerPluginTest {
             setupConsumerProject()
         }
 
-        val result = runner.outgoingVariant("archRulesReportElements") {
+        val result = runner.run(":consumer:outgoingVariants", "--variant", "archRulesReportElements") {
             withGradle(gradleVersion.version)
             forwardOutput()
         }
-        assertThat(result)
+        assertThat(result.output.substringBefore("Secondary Variants (*)"))
             .contains("- org.gradle.category         = verification")
             .contains("- org.gradle.verificationtype = arch-rules")
             .contains("- build/reports/archrules/main.data (artifactType = binary)")
@@ -216,20 +246,25 @@ class ArchrulesRunnerPluginTest {
     @Test
     fun `plugin checks each sourceset from its runtime`() {
         val runner = testProject(projectDir) {
-            setupConsumerProject(ruleDependency = false) {
+            setupConsumerProject {
                 dependencies(
-                    """testImplementation("com.netflix.nebula:archrules-deprecation:0.+")"""
+                    """testImplementation(project(":library-with-rules"))"""
                 )
+                src {
+                    test {
+                        dontUseUsage("Low")
+                    }
+                }
             }
         }
 
-        val result = runner.run("check", "--stacktrace", "-x", "test")
+        val result = runner.run(":consumer:check", "--stacktrace", "-x", "test")
 
-        assertThat(result.task(":checkArchRulesMain"))
+        assertThat(result.task(":consumer:checkArchRulesMain"))
             .`as`("archRules run for main source set")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        assertThat(result.task(":checkArchRulesTest"))
+        assertThat(result.task(":consumer:checkArchRulesTest"))
             .`as`("archRules run for test source set")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
@@ -237,38 +272,43 @@ class ArchrulesRunnerPluginTest {
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
 
-        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        val mainReport = projectDir.resolve("consumer/build/reports/archrules/main.data")
         assertThat(mainReport)
             .`as`("rule not in main classpath, so not checked")
             .exists()
         val mainErrors = readDetails(mainReport)
         assertThat(mainErrors).isEmpty()
 
-        val testReport = projectDir.resolve("build/reports/archrules/test.data")
+        val testReport = projectDir.resolve("consumer/build/reports/archrules/test.data")
         assertThat(testReport)
             .`as`("Test data created")
             .exists()
         val testErrors = readDetails(testReport)
-        assertThat(testErrors).hasSize(2)
+        assertThat(testErrors).hasSize(3)
     }
 
     @Test
     fun `plugin checks each sourceset from its compile classpath`() {
         val runner = testProject(projectDir) {
-            setupConsumerProject(ruleDependency = false) {
+            setupConsumerProject {
                 dependencies(
-                    """testCompileOnly("com.netflix.nebula:archrules-deprecation:0.+")"""
+                    """testCompileOnly(project(":library-with-rules"))"""
                 )
+                src {
+                    test {
+                        dontUseUsage("Low")
+                    }
+                }
             }
         }
 
-        val result = runner.run("check", "--stacktrace", "-x", "test")
+        val result = runner.run(":consumer:check", "--stacktrace", "-x", "test")
 
-        assertThat(result.task(":checkArchRulesMain"))
+        assertThat(result.task(":consumer:checkArchRulesMain"))
             .`as`("archRules run for main source set")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        assertThat(result.task(":checkArchRulesTest"))
+        assertThat(result.task(":consumer:checkArchRulesTest"))
             .`as`("archRules run for test source set")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
@@ -276,25 +316,32 @@ class ArchrulesRunnerPluginTest {
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
 
-        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        val mainReport = projectDir.resolve("consumer/build/reports/archrules/main.data")
         assertThat(mainReport)
             .`as`("rule not in main classpath, so not checked")
             .exists()
         val mainErrors = readDetails(mainReport)
         assertThat(mainErrors).isEmpty()
 
-        val testReport = projectDir.resolve("build/reports/archrules/test.data")
+        val testReport = projectDir.resolve("consumer/build/reports/archrules/test.data")
         assertThat(testReport)
             .`as`("Test data created")
             .exists()
         val testErrors = readDetails(testReport)
-        assertThat(testErrors).hasSize(2)
+        assertThat(testErrors).hasSize(3)
+        assertThat(testErrors.first { it.rule.ruleName == "dont use Low" }.status() == RuleResultStatus.FAIL)
     }
 
     @Test
     fun `console report can be disabled`() {
         val runner = testProject(projectDir) {
-            setupConsumerProject(setupSources = false) {
+            setupConsumerProject {
+                dependencies("""implementation(project(":$LIBRARY_WITH_RULES_PROJECT"))""")
+                src {
+                    main {
+                        dontUseUsage("High")
+                    }
+                }
                 rawBuildScript(
                     """
 archRules {
@@ -307,7 +354,7 @@ archRules {
 
         val result = runner.run("check", "--stacktrace", "-x", "test")
 
-        assertThat(result.task(":archRulesConsoleReport"))
+        assertThat(result.task(":consumer:archRulesConsoleReport"))
             .`as`("archRules console report runs by default")
             .hasOutcome(TaskOutcome.SKIPPED)
 
@@ -317,16 +364,15 @@ archRules {
 
         assertThat(result.output)
             .doesNotContain("ArchRule summary:")
-            .doesNotContain("deprecated                     LOW        (1 failures)")
-            .doesNotContain(MEDIUM_FAILURE_DETAILS)
-            .doesNotContain(LOW_FAILURE_DETAILS)
+            .doesNotContain("failures)")
             .doesNotContain(FILTERED_DETAILS_NOTE)
     }
 
     @Test
     fun `json report can be disabled`() {
         val runner = testProject(projectDir) {
-            setupConsumerProject(setupSources = false) {
+            setupConsumerProject {
+                dependencies("""archRules(project(":$RULES_ONLY_PROJECT"))""")
                 rawBuildScript(
                     """
 archRules {
@@ -339,7 +385,7 @@ archRules {
 
         val result = runner.run("check", "--stacktrace", "-x", "test")
 
-        assertThat(result.task(":archRulesJsonReport"))
+        assertThat(result.task(":consumer:archRulesJsonReport"))
             .`as`("json report task is skipped")
             .hasOutcome(TaskOutcome.SKIPPED)
 
@@ -347,7 +393,7 @@ archRules {
             .hasNoMutableStateWarnings()
             .hasNoDeprecationWarnings()
 
-        val jsonReport = projectDir.resolve("build/reports/archrules/report.json")
+        val jsonReport = projectDir.resolve("consumer/build/reports/archrules/report.json")
         assertThat(jsonReport)
             .`as`("json report is not created")
             .doesNotExist()
@@ -356,7 +402,8 @@ archRules {
     @Test
     fun `markdown report can be disabled`() {
         val runner = testProject(projectDir) {
-            setupConsumerProject(setupSources = false) {
+            setupConsumerProject {
+                dependencies("""archRules(project(":$RULES_ONLY_PROJECT"))""")
                 rawBuildScript(
                     """
 archRules {
@@ -369,7 +416,7 @@ archRules {
 
         val result = runner.run("check", "--stacktrace", "-x", "test")
 
-        assertThat(result.task(":archRulesMarkdownReport"))
+        assertThat(result.task(":consumer:archRulesMarkdownReport"))
             .`as`("markdown report task is skipped")
             .hasOutcome(TaskOutcome.SKIPPED)
 
@@ -387,7 +434,8 @@ archRules {
     @EnumSource(SupportedGradleVersion::class)
     fun `plugin checks additional sourcesets`(gradleVersion: SupportedGradleVersion) {
         val runner = testProject(projectDir) {
-            setupConsumerProject(setupSources = false) {
+            setupConsumerProject {
+                dependencies("""archRules(project(":$RULES_ONLY_PROJECT"))""")
                 rawBuildScript("""sourceSets.create("custom")""")
             }
         }
@@ -397,7 +445,7 @@ archRules {
             forwardOutput()
         }
 
-        assertThat(result.task(":checkArchRulesCustom"))
+        assertThat(result.task(":consumer:checkArchRulesCustom"))
             .`as`("archRules run for main source set")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
@@ -409,13 +457,18 @@ archRules {
     @Test
     fun `passing summaries print by default`() {
         val runner = testProject(projectDir) {
-            setupConsumerProject(setupSources = false) {
+            setupConsumerProject {
+                dependencies(
+                    """archRules(project(":$RULES_ONLY_PROJECT"))""",
+                    """implementation(project(":$LIBRARY_ONLY_PROJECT"))""",
+                    """testImplementation(project(":$LIBRARY_ONLY_PROJECT"))"""
+                )
                 src {
                     main {
-                        exampleLibraryClass()
+                        dontUseUsage("High")
                     }
                     test {
-                        exampleDeprecatedUsage("FailingCodeTest")
+                        dontUseUsage("Medium")
                     }
                 }
             }
@@ -423,7 +476,7 @@ archRules {
 
         val result = runner.run("check", "--stacktrace", "-x", "test")
 
-        assertThat(result.task(":archRulesConsoleReport"))
+        assertThat(result.task(":consumer:archRulesConsoleReport"))
             .`as`("archRules console report runs by default")
             .hasOutcome(TaskOutcome.SUCCESS)
 
@@ -432,15 +485,14 @@ archRules {
             .hasNoDeprecationWarnings()
 
         assertThat(result.output)
-            .contains("com.netflix.nebula.archrules.deprecation.DeprecationRule")
-            .contains(LOW_PASSING_SUMMARY)
-            .contains("MEDIUM     (No failures)")
+            .contains("com.example.library.DontUseArchRules")
+            .contains("dont use Low     LOW        (No failures)")
     }
 
     @Test
     fun `passing summaries can be disabled`() {
         val runner = testProject(projectDir) {
-            setupConsumerProject(setupSources = false) {
+            setupConsumerProject {
                 rawBuildScript(
                     """
 archRules {
@@ -467,7 +519,7 @@ archRules {
 
         val result = runner.run("check", "--stacktrace", "-x", "test")
 
-        assertThat(result.task(":archRulesConsoleReport"))
+        assertThat(result.task(":consumer:archRulesConsoleReport"))
             .`as`("archRules console report runs by default")
             .hasOutcome(TaskOutcome.SUCCESS)
 
@@ -484,6 +536,15 @@ archRules {
     fun `details threshold set to medium (default)`() {
         val runner = testProject(projectDir) {
             setupConsumerProject {
+                dependencies(
+                    """implementation(project(":$LIBRARY_WITH_RULES_PROJECT"))"""
+                )
+                src {
+                    main {
+                        dontUseUsage("Low")
+                        dontUseUsage("Medium")
+                    }
+                }
                 rawBuildScript(
                     """
 archRules {
@@ -504,15 +565,23 @@ archRules {
 
         assertThat(result.output)
             .`as`("only medium priority failure details are shown")
-            .contains(MEDIUM_FAILURE_DETAILS)
+            .contains("Rule: dont use Medium Priority: MEDIUM")
             .contains(FILTERED_DETAILS_NOTE)
-            .doesNotContain(LOW_FAILURE_DETAILS)
+            .doesNotContain("Rule: dont use Low Priority: LOW")
     }
 
     @Test
     fun `details threshold set to low`() {
         val runner = testProject(projectDir) {
             setupConsumerProject {
+                dependencies(
+                    """implementation(project(":$LIBRARY_WITH_RULES_PROJECT"))"""
+                )
+                src {
+                    main {
+                        dontUseUsage("Low")
+                    }
+                }
                 rawBuildScript(
                     """
 archRules {
@@ -533,7 +602,7 @@ archRules {
 
         assertThat(result.output)
             .`as`("low priority failure details are shown")
-            .contains(LOW_FAILURE_DETAILS)
+            .contains("No code should reference DontUseLow APIs")
             .doesNotContain(FILTERED_DETAILS_NOTE)
     }
 
@@ -541,7 +610,11 @@ archRules {
     fun `plugin skips archrules library test sourceset by default`() {
         val runner = testProject(projectDir) {
             setupConsumerProject {
+                dependencies(
+                    """archRules(project(":library-with-rules"))"""
+                )
                 plugins {
+                    id("java-library")
                     id("com.netflix.nebula.archrules.library")
                 }
             }
@@ -549,19 +622,19 @@ archRules {
 
         val result = runner.run("check", "--stacktrace", "-x", "test")
 
-        assertThat(result.task(":checkArchRulesMain"))
+        assertThat(result.task(":consumer:checkArchRulesMain"))
             .`as`("archRules run for main source set")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        assertThat(result.task(":checkArchRulesTest"))
+        assertThat(result.task(":consumer:checkArchRulesTest"))
             .`as`("archRules run for test source set")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        assertThat(result.task(":checkArchRulesArchRulesTest"))
+        assertThat(result.task(":consumer:checkArchRulesArchRulesTest"))
             .`as`("archRules run for test source set")
-            .hasOutcome(TaskOutcome.SUCCESS)
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        val archRulesTestReport = projectDir.resolve("build/reports/archrules/archRulesTest.data")
+        val archRulesTestReport = projectDir.resolve("consumer/build/reports/archrules/archRulesTest.data")
         assertThat(archRulesTestReport)
             .`as`("archRulesTestReport data not created")
             .doesNotExist()
@@ -575,6 +648,14 @@ archRules {
     fun `plugin can skip configured source sets`() {
         val runner = testProject(projectDir) {
             setupConsumerProject {
+                dependencies(
+                    """implementation(project(":library-with-rules"))"""
+                )
+                src {
+                    test {
+                        dontUseUsage("High")
+                    }
+                }
                 rawBuildScript(
                     """
 archRules {
@@ -587,15 +668,15 @@ archRules {
 
         val result = runner.run("check", "--stacktrace", "-x", "test")
 
-        assertThat(result.task(":checkArchRulesMain"))
+        assertThat(result.task(":consumer:checkArchRulesMain"))
             .`as`("archRules run for main source set")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        assertThat(result.task(":checkArchRulesTest"))
+        assertThat(result.task(":consumer:checkArchRulesTest"))
             .`as`("tasks for skipped sources set still runs")
-            .hasOutcome(TaskOutcome.SUCCESS)
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        val archRulesTestReport = projectDir.resolve("build/reports/archrules/test.data")
+        val archRulesTestReport = projectDir.resolve("consumer/build/reports/archrules/test.data")
         assertThat(archRulesTestReport)
             .`as`("skipped sources set data not created")
             .doesNotExist()
@@ -623,16 +704,21 @@ archRules {
     }
 
     @Test
-    fun `can override priority of a rule using both rule class and name`() {
+    fun `can override priority of a rule using rule name`() {
         val runner = testProject(projectDir) {
             setupConsumerProject {
+                dependencies(
+                    """implementation(project(":$LIBRARY_WITH_RULES_PROJECT"))"""
+                )
+                src {
+                    main {
+                        dontUseUsage("Low")
+                    }
+                }
                 rawBuildScript(
                     """
 archRules {
-    ruleClass("com.netflix.nebula.archrules.deprecation") {
-        priority("HIGH")
-    }
-    ruleName("deprecated") {
+    ruleName("dont use Low") {
         priority("MEDIUM")
     }
 }
@@ -641,25 +727,59 @@ archRules {
             }
         }
 
-        val result = runner.run("checkArchRulesMain", "--stacktrace")
+        val result = runner.run(":consumer:checkArchRulesMain", "--stacktrace")
 
-        assertThat(result.task(":checkArchRulesMain"))
+        assertThat(result.task(":consumer:checkArchRulesMain"))
             .`as`("archRules run for main source set")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        val mainReport = projectDir.resolve("consumer/build/reports/archrules/main.data")
         val results = readDetails(mainReport)
 
-        val deprecatedForRemovalResults = results.filter { it.rule.ruleName == "deprecatedForRemoval" }
-        assertThat(deprecatedForRemovalResults).hasSize(1)
-        deprecatedForRemovalResults.forEach { result ->
-            assertThat(result.rule.priority).isEqualTo(Priority.HIGH)
+        val lowRuleResults = results.filter { it.rule.ruleName == "dont use Low" }
+        assertThat(lowRuleResults).hasSize(1)
+        lowRuleResults.forEach { result ->
+            assertThat(result.rule.priority).isEqualTo(Priority.MEDIUM)
+        }
+    }
+
+    @Test
+    fun `can override priority of a rule using rule class`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                dependencies(
+                    """implementation(project(":$LIBRARY_WITH_RULES_PROJECT"))"""
+                )
+                src {
+                    main {
+                        dontUseUsage("Low")
+                    }
+                }
+                rawBuildScript(
+                    """
+archRules {
+    ruleClass("com.example.library.DontUseArchRules") {
+        priority("HIGH")
+    }
+}
+"""
+                )
+            }
         }
 
-        val deprecatedResults = results.filter { it.rule.ruleName == "deprecated" }
-        assertThat(deprecatedResults).hasSize(2)
-        deprecatedResults.forEach { result ->
-            assertThat(result.rule.priority).isEqualTo(Priority.MEDIUM)
+        val result = runner.run("checkArchRulesMain", "--stacktrace")
+
+        assertThat(result.task(":consumer:checkArchRulesMain"))
+            .`as`("archRules run for main source set")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        val mainReport = projectDir.resolve("consumer/build/reports/archrules/main.data")
+        val results = readDetails(mainReport)
+
+        val lowRuleResults = results.filter { it.rule.ruleName == "dont use Low" }
+        assertThat(lowRuleResults).hasSize(1)
+        lowRuleResults.forEach { result ->
+            assertThat(result.rule.priority).isEqualTo(Priority.HIGH)
         }
     }
 
@@ -667,42 +787,18 @@ archRules {
     fun `rule level source set excludes`() {
         val runner = testProject(projectDir) {
             setupConsumerProject {
-                rawBuildScript(
-                    """
-archRules {
-    ruleName("deprecated") {
-        skipSourceSet("main")
-    }
-}
-"""
+                dependencies(
+                    """implementation(project(":$LIBRARY_WITH_RULES_PROJECT"))"""
                 )
-            }
-        }
-
-        val result = runner.run("checkArchRulesMain", "--stacktrace", "--info")
-
-        assertThat(result.task(":checkArchRulesMain"))
-            .`as`("archRules run for main source set")
-            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
-
-        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
-        val results = readDetails(mainReport)
-
-        val deprecatedForRemovalResults = results.filter { it.rule.ruleName == "deprecatedForRemoval" }
-        assertThat(deprecatedForRemovalResults).hasSize(1)
-
-        val deprecatedResults = results.filter { it.rule.ruleName == "deprecated" }
-        assertThat(deprecatedResults).isEmpty()
-    }
-
-    @Test
-    fun `ruleClass level source set excludes`() {
-        val runner = testProject(projectDir) {
-            setupConsumerProject {
+                src {
+                    main {
+                        dontUseUsage("High")
+                    }
+                }
                 rawBuildScript(
                     """
 archRules {
-    ruleClass("com.netflix.nebula.archrules.deprecation") {
+    ruleName("dont use High") {
         skipSourceSet("main")
     }
 }
@@ -713,81 +809,91 @@ archRules {
 
         val result = runner.run("checkArchRulesMain", "--stacktrace")
 
-        assertThat(result.task(":checkArchRulesMain"))
+        assertThat(result.task(":consumer:checkArchRulesMain"))
             .`as`("archRules run for main source set")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        val mainReport = projectDir.resolve("consumer/build/reports/archrules/main.data")
+        val results = readDetails(mainReport)
+
+        val deprecatedResults = results.filter { it.rule.ruleName == "dont use High" }
+        assertThat(deprecatedResults).isEmpty()
+    }
+
+    @Test
+    fun `ruleClass level source set excludes`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                dependencies(
+                    """archRules(project(":$RULES_ONLY_PROJECT"))"""
+                )
+                rawBuildScript(
+                    """
+archRules {
+    ruleClass("com.example.library.DontUseArchRules") {
+        skipSourceSet("main")
+    }
+}
+"""
+                )
+            }
+        }
+
+        val result = runner.run("checkArchRulesMain", "--stacktrace")
+
+        assertThat(result.task(":consumer:checkArchRulesMain"))
+            .`as`("archRules run for main source set")
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+
+        val mainReport = projectDir.resolve("consumer/build/reports/archrules/main.data")
         val results = readDetails(mainReport)
 
         assertThat(results).isEmpty()
     }
 
     @Test
-    fun `ruleName level source set includes`() {
-        val runner = testProject(projectDir) {
-            setupConsumerProject {
-                dependencies("""archRules("com.netflix.nebula:archrules-nullability:0.+")""")
-            }
-        }
-
-        val result = runner.run(
-            "archRulesConsoleReport",
-            "--rule-name=no Optional class fields",
-            "--rule-name=deprecated",
-            "--stacktrace"
-        )
-        assertThat(result.task(":checkArchRulesMain")).hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
-
-        assertThat(result.output)
-            .contains("deprecated")
-            .contains("no Optional class fields")
-            .doesNotContain("deprecatedForRemoval")
-    }
-
-    @Test
-    fun `ruleClass level source set includes`() {
+    fun `test run rules using the rule-name command line param`() {
         val runner = testProject(projectDir) {
             setupConsumerProject {
                 dependencies(
-                    """
-                    archRules("com.netflix.nebula:archrules-nullability:0.+")
-                    archRules("com.netflix.nebula:archrules-joda:0.+")
-                """
+                    """implementation(project(":$LIBRARY_WITH_RULES_PROJECT"))"""
                 )
+                src {
+                    main {
+                        dontUseUsage("Low")
+                        dontUseUsage("Medium")
+                        dontUseUsage("High")
+                    }
+                }
             }
         }
 
         val result = runner.run(
             "archRulesConsoleReport",
-            "--rule-class=com.netflix.nebula.archrules.nullability",
-            "--rule-name=jodaRule",
+            "--rule-name=\"dont use Low\"",
+            "--rule-name=\"dont use Medium\"",
             "--stacktrace"
         )
-        assertThat(result.task(":checkArchRulesMain")).hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
+        assertThat(result.task(":consumer:checkArchRulesMain"))
+            .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
-        val nullabilityRuleNames = readDetails(mainReport)
-            .filter { it.rule.ruleClass().startsWith("com.netflix.nebula.archrules.nullability") }
-            .map { it.rule.ruleName() }
-            .distinct()
-
-        assertThat(nullabilityRuleNames).isNotEmpty()
-        nullabilityRuleNames.forEach { ruleName ->
-            assertThat(result.output).contains(ruleName)
-        }
-        assertThat(result.output).contains("jodaRule")
-        assertThat(result.output).doesNotContain("com.netflix.nebula.archrules.deprecation")
+        assertThat(result.output)
+            .contains("dont use Low")
+            .contains("dont use Medium")
+            .doesNotContain("dont use High")
     }
 
     @Test
     fun `invalid priority string logs warning and does not override`() {
         val runner = testProject(projectDir) {
             setupConsumerProject {
+                dependencies(
+                    """archRules(project(":library-with-rules"))"""
+                )
                 rawBuildScript(
                     """
 archRules {
-    ruleName("deprecatedForRemoval") {
+    ruleName("dont use Low") {
         priority("NONE")
     }
 }
@@ -802,15 +908,15 @@ archRules {
             .contains("Invalid ArchRule priority 'NONE'")
             .contains("Must be one of the following (case-sensitive): HIGH, MEDIUM, LOW")
 
-        assertThat(result.task(":checkArchRulesMain"))
+        assertThat(result.task(":consumer:checkArchRulesMain"))
             .`as`("archRules run for main source set")
             .hasOutcome(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
 
-        val mainReport = projectDir.resolve("build/reports/archrules/main.data")
+        val mainReport = projectDir.resolve("consumer/build/reports/archrules/main.data")
         val results = readDetails(mainReport)
 
         // assert priority stays default
-        val deprecationResult = results.firstOrNull { it.rule.ruleName == "deprecated" }
+        val deprecationResult = results.firstOrNull { it.rule.ruleName == "dont use Low" }
         assertThat(deprecationResult).isNotNull
         assertThat(deprecationResult!!.rule.priority).isEqualTo(Priority.LOW)
     }
@@ -903,6 +1009,14 @@ configurations.named("testCompileClasspath") {
     fun `plugin verification`(gradleVersion: SupportedGradleVersion) {
         val runner = testProject(projectDir) {
             setupConsumerProject {
+                dependencies(
+                    """implementation(project(":$LIBRARY_WITH_RULES_PROJECT"))"""
+                )
+                src {
+                    main {
+                        dontUseUsage("Medium")
+                    }
+                }
                 rawBuildScript(
                     """
 archRules {
@@ -918,7 +1032,7 @@ archRules {
             forwardOutput()
         }
 
-        assertThat(result.task(":enforceArchRules"))
+        assertThat(result.task(":consumer:enforceArchRules"))
             .`as`("verification task fails")
             .hasOutcome(TaskOutcome.FAILED)
 
@@ -930,7 +1044,7 @@ archRules {
             .contains("ArchRules Critical Failure")
             .contains("Problems report is available at:")
 
-        if (gradleVersion != SupportedGradleVersion.GRADLE_9_1) {
+        if (gradleVersion != SupportedGradleVersion.GRADLE_9_2) {
             assertThat(result.output)
                 .`as`("enhanced problems output in newer gradle versions")
                 .containsIgnoringCase("solution: Fix critical errors reported in Problems Report")
@@ -941,6 +1055,14 @@ archRules {
     fun `plugin verification with stale skipped reports`() {
         val runner = testProject(projectDir) {
             setupConsumerProject {
+                dependencies(
+                    """implementation(project(":library-with-rules"))"""
+                )
+                src {
+                    main {
+                        dontUseUsage("High")
+                    }
+                }
                 rawBuildScript(
                     """
 archRules {
@@ -953,42 +1075,84 @@ archRules {
 
         val result = runner.runAndFail("check", "--stacktrace", "-x", "test")
 
-        assertThat(result.task(":enforceArchRules"))
+        assertThat(result.task(":consumer:enforceArchRules"))
             .`as`("verification task fails")
             .hasOutcome(TaskOutcome.FAILED)
-        projectDir.resolve("build.gradle.kts").appendText("""
+        projectDir.resolve("consumer/build.gradle.kts").appendText(
+            """
 archRules {
     skipSourceSet("main")
 }
-""")
+"""
+        )
         val result2 = runner.run("check", "--stacktrace", "-x", "test")
-        assertThat(result2.task(":enforceArchRules"))
+        assertThat(result2.task(":consumer:enforceArchRules"))
             .`as`("verification task passes")
             .hasOutcome(TaskOutcome.SUCCESS)
     }
 
     @Test
+    fun `archRulesRuntime configuration selects archRulesRuntimeElements variant`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                dependencies(
+                    """implementation(project(":$LIBRARY_WITH_RULES_PROJECT"))"""
+                )
+            }
+        }
+        val result = runner.run(
+            ":consumer:dependencyInsight", "--stacktrace",
+            "--configuration", "mainArchRulesRuntime",
+            "--dependency", LIBRARY_WITH_RULES_PROJECT
+        )
+        assertThat(result.output)
+            .doesNotContain("FAILED")
+            .contains("Variant archRulesRuntimeElements")
+    }
+
+    @Test
+    fun `archRulesRuntime configuration selects archRulesRuntimeElements variant from archRules`() {
+        val runner = testProject(projectDir) {
+            setupConsumerProject {
+                dependencies(
+                    """archRules(project(":$LIBRARY_WITH_RULES_PROJECT"))"""
+                )
+            }
+        }
+        val result = runner.run(
+            ":consumer:dependencyInsight", "--stacktrace",
+            "--configuration", "mainArchRulesRuntime",
+            "--dependency", LIBRARY_WITH_RULES_PROJECT
+        )
+        assertThat(result.output)
+            .doesNotContain("FAILED")
+            .contains("Variant archRulesRuntimeElements")
+    }
+
+    @Test
     fun `archRulesRuntime configuration respects resolution rules`() {
         val runner = testProject(projectDir) {
-            setupConsumerProject(ruleDependency = true) {
+            setupConsumerProject {
                 dependencies(
                     """implementation("com.google.guava:guava")"""
                 )
-                rawBuildScript("""
+                rawBuildScript(
+                    """
 configurations.named("compileClasspath") {
     resolutionStrategy.dependencySubstitution {
         substitute(module("com.google.guava:guava")).using(module("com.google.guava:guava:21.0"))
     }
 }
-""")
+"""
+                )
             }
         }
-        val compileClasspath = runner.run("dependencyInsight", "--stacktrace",
-            "--configuration", "compileClasspath",
-            "--dependency","guava")
-        val result = runner.run("dependencyInsight", "--stacktrace",
+
+        val result = runner.run(
+            ":consumer:dependencyInsight", "--stacktrace",
             "--configuration", "mainArchRulesRuntime",
-            "--dependency","guava")
+            "--dependency", "guava"
+        )
         assertThat(result.output)
             .doesNotContain("FAILED")
             .contains("com.google.guava:guava:21.0")

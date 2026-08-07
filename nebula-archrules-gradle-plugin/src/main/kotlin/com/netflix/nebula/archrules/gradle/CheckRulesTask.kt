@@ -8,6 +8,7 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
@@ -17,14 +18,13 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.submit
 import org.gradle.workers.WorkQueue
 import org.gradle.workers.WorkerExecutor
-import java.io.File
 import javax.inject.Inject
 
 @CacheableTask
 abstract class CheckRulesTask @Inject constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
 
     @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
+    @get:Classpath
     abstract val rulesClasspath: ConfigurableFileCollection
 
     @get:InputFiles
