@@ -67,7 +67,7 @@ class ArchrulesAggregateReportPluginTest {
             }
             dependencies(
                 """implementation(project(":library"))""",
-                """archRules("com.netflix.nebula:archrules-deprecation:0.+")"""
+                """archRules("com.netflix.nebula:archrules-deprecation:latest.release")"""
             )
             src {
                 main {
