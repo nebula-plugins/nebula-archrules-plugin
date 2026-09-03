@@ -7,6 +7,9 @@ plugins {
 }
 description = "Plugins for authoring and running Nebula ArchRules"
 dependencies {
+    api(libs.archunit) {
+        because("we expose archunit priority class via Extension")
+    }
     implementation(project(":nebula-archrules-core"))
     compileOnly("tools.jackson.core:jackson-databind:3.1.0") // keep in sync with ArchrulesRunnerPlugin
 
@@ -105,17 +108,5 @@ kotlin {
     compilerOptions {
         apiVersion.set(KotlinVersion.KOTLIN_2_1)
         languageVersion.set(KotlinVersion.KOTLIN_2_1)
-    }
-}
-
-// temporary until the version of archrules this project applies has an aligned archunit version
-configurations.named("mainArchRulesRuntime"){
-    resolutionStrategy {
-        force("com.tngtech.archunit:archunit:1.4.2")
-    }
-}
-configurations.named("testArchRulesRuntime"){
-    resolutionStrategy {
-        force("com.tngtech.archunit:archunit:1.4.2")
     }
 }

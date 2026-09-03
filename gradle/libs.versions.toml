@@ -1,0 +1,2 @@
+[libraries]
+archunit = { module = "com.tngtech.archunit:archunit", version = "1.5.+" }
