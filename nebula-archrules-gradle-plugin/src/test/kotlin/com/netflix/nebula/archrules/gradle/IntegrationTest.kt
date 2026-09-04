@@ -1,9 +1,20 @@
 package com.netflix.nebula.archrules.gradle
 
-import nebula.test.dsl.*
+import nebula.test.dsl.ProjectBuilder
 import nebula.test.dsl.TestKitAssertions.assertThat
+import nebula.test.dsl.TestProjectBuilder
+import nebula.test.dsl.main
+import nebula.test.dsl.plugins
+import nebula.test.dsl.properties
+import nebula.test.dsl.repositories
+import nebula.test.dsl.run
+import nebula.test.dsl.sourceSet
+import nebula.test.dsl.src
+import nebula.test.dsl.subProject
+import nebula.test.dsl.testProject
+import nebula.test.dsl.version
+import nebula.test.dsl.withGradle
 import org.gradle.testkit.runner.TaskOutcome
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
@@ -257,7 +268,7 @@ internal class IntegrationTest {
                 buildCache(true)
                 configurationCache(true)
             }
-            projectWithRules{
+            projectWithRules {
                 plugins {
                     id("checkstyle")
                 }
@@ -274,7 +285,8 @@ internal class IntegrationTest {
   "https://checkstyle.org/dtds/configuration_1_3.dtd">
   <module name="Checker">
   </module>
-  """)
+  """
+            )
         }
 
         val result = runner.run("check", "--stacktrace")

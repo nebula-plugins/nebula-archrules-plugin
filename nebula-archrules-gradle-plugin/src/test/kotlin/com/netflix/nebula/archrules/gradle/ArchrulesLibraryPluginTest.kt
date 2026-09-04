@@ -1,6 +1,7 @@
 package com.netflix.nebula.archrules.gradle
 
 import nebula.test.dsl.TestKitAssertions.assertThat
+import nebula.test.dsl.dependencies
 import nebula.test.dsl.main
 import nebula.test.dsl.plugins
 import nebula.test.dsl.properties
@@ -205,6 +206,74 @@ internal class ArchrulesLibraryPluginTest {
                 )
             )
     }
+
+    @Test
+    fun `archRules implementation dependencies are included in archRules`() {
+        val runner = testProject(projectDir) {
+            properties {
+                buildCache(true)
+            }
+            settings {
+                name("library-with-rules")
+            }
+            subProject("helper"){
+                group("com.example")
+                plugins {
+                    id("java-library")
+                    id("maven-publish")
+                }
+                declareMavenPublication()
+            }
+            subProject("lib") {
+                group("com.example")
+                // a library that contains production code and rules to go along with it
+                plugins {
+                    id("java-library")
+                    id("com.netflix.nebula.archrules.library")
+                    id("maven-publish")
+                }
+                repositories {
+                    nebulaOss()
+                }
+                declareMavenPublication()
+                dependencies {
+                    add("archRulesImplementation", project(":helper"))
+                }
+            }
+        }
+
+        val result = runner.run("lib:generateMetadataFileForMavenPublication", "-Pversion=0.0.1")
+
+        assertThat(result)
+            .hasNoMutableStateWarnings()
+            .hasNoDeprecationWarnings()
+
+        val moduleMetadata = projectDir.resolve("lib/build/publications/maven/module.json")
+        assertThat(moduleMetadata)
+            .`as`("Gradle Module Metadata is created")
+            .exists()
+
+        val moduleMetadataJson = moduleMetadata.readText()
+
+        assertThatJson(moduleMetadataJson)
+            .inPath("$.variants[?(@.name=='archRulesRuntimeElements')].dependencies[1]")
+            .isArray
+            .contains(
+                json(
+                    //language=json
+                    """
+{
+  "group": "com.example",
+  "module": "helper",
+  "version": {
+    "requires": "0.0.1"
+  }
+}
+            """
+                )
+            )
+    }
+
 
     @Test
     fun `plugin sets up tests for rules`() {
