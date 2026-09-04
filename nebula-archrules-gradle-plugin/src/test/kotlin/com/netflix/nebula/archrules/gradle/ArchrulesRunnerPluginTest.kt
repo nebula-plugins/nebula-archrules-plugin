@@ -4,6 +4,7 @@ import com.tngtech.archunit.lang.Priority
 import nebula.test.dsl.TestKitAssertions.assertThat
 import nebula.test.dsl.TestProjectBuilder
 import nebula.test.dsl.TestProjectRunner
+import nebula.test.dsl.dependencies
 import nebula.test.dsl.main
 import nebula.test.dsl.plugins
 import nebula.test.dsl.properties
@@ -1108,6 +1109,68 @@ archRules {
         assertThat(result.output)
             .doesNotContain("FAILED")
             .contains("Variant archRulesRuntimeElements")
+    }
+
+    @Test
+    fun `archRulesRuntime configuration does not include runtime only dependencies`() {
+        val runner = testProject(projectDir) {
+            subProject("lib-a") {
+                plugins {
+                    id("java")
+                }
+            }
+            subProject("lib-b") {
+                plugins {
+                    id("java")
+                }
+                dependencies {
+                    implementation(project(":lib-a"))
+                }
+            }
+            subProject("consumer") {
+                plugins {
+                    id("java")
+                    id("com.netflix.nebula.archrules.runner")
+                }
+                dependencies {
+                    implementation(project(":lib-b"))
+                }
+            }
+        }
+        val result = runner.run(":consumer:dependencies", "--configuration", "mainArchRulesRuntime")
+        assertThat(result.output)
+            .doesNotContain("lib-a")
+    }
+
+    @Test
+    fun `test archRulesRuntime configuration does not include runtime only dependencies`() {
+        val runner = testProject(projectDir) {
+            subProject("lib-a") {
+                plugins {
+                    id("java")
+                }
+            }
+            subProject("lib-b") {
+                plugins {
+                    id("java")
+                }
+                dependencies {
+                    implementation(project(":lib-a"))
+                }
+            }
+            subProject("consumer") {
+                plugins {
+                    id("java")
+                    id("com.netflix.nebula.archrules.runner")
+                }
+                dependencies {
+                    implementation(project(":lib-b"))
+                }
+            }
+        }
+        val result = runner.run(":consumer:dependencies", "--configuration", "testArchRulesRuntime")
+        assertThat(result.output)
+            .doesNotContain("lib-a")
     }
 
     @Test

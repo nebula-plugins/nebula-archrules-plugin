@@ -456,4 +456,57 @@ class TransitiveDependencyTests {
                 )
             )
     }
+
+    /**
+     * This is not ideal: we should include all the runtime dependencies of rules,
+     * while only including compile dependencies of the code being tested, I have not figured out how to do that yet
+     * so this test serves to document current behavior
+     */
+    @Test
+    fun `archRule dependencies include only their compile dependencies when resolved by the runner`() {
+        val runner = testProject(projectDir) {
+            properties {
+                buildCache(true)
+            }
+            subProject("helper") {
+                plugins {
+                    id("java-library")
+                }
+            }
+            subProject("library") {
+                plugins {
+                    id("java-library")
+                }
+                dependencies {
+                    api(project(":helper"))
+                }
+            }
+            subProject("rules") {
+                // a library that contains production code and rules to go along with it
+                plugins {
+                    id("java-library")
+                    id("com.netflix.nebula.archrules.library")
+                    id("maven-publish")
+                }
+                repositories {
+                    nebulaOss()
+                }
+                dependencies {
+                    add("archRulesImplementation", project(":library"))
+                }
+            }
+            subProject("user") {
+                plugins {
+                    id("java")
+                    id("com.netflix.nebula.archrules.runner")
+                }
+                dependencies {
+                    implementation(project(":rules"))
+                }
+            }
+        }
+
+        val mainArchRulesRuntime = runner.run(":user:dependencies", "--configuration","mainArchRulesRuntime")
+        assertThat(mainArchRulesRuntime.output).contains("helper")
+    }
 }

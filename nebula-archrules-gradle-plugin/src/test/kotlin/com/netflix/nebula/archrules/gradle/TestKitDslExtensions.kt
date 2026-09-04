@@ -1,6 +1,7 @@
 package com.netflix.nebula.archrules.gradle
 
 import nebula.test.dsl.ProjectBuilder
+import nebula.test.dsl.RepositoriesBuilder
 import nebula.test.dsl.SourceSetBuilder
 import nebula.test.dsl.plugins
 import nebula.test.dsl.repositories
@@ -521,4 +522,8 @@ project.getConfigurations().resolvable("printDeps") {
 }
 """
     )
+}
+
+fun RepositoriesBuilder.nebulaOss() {
+    maven("https://netflixoss.jfrog.io/artifactory/gradle-plugins")
 }
