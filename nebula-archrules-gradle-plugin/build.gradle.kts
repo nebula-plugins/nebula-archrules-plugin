@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     id("com.netflix.nebula.plugin-plugin")
-    `kotlin-dsl`
+    kotlin("jvm")
 }
 description = "Plugins for authoring and running Nebula ArchRules"
 dependencies {
@@ -102,11 +102,5 @@ configurations.named("mainArchRulesRuntime").configure {
 archRules {
     ruleName("javaxRule") {
         priority("LOW") // Gradle still requires use of javax Inject
-    }
-}
-kotlin {
-    compilerOptions {
-        apiVersion.set(KotlinVersion.KOTLIN_2_1)
-        languageVersion.set(KotlinVersion.KOTLIN_2_1)
     }
 }

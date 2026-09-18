@@ -9,14 +9,14 @@ import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import org.gradle.kotlin.dsl.submit
 import org.gradle.workers.WorkQueue
 import org.gradle.workers.WorkerExecutor
 import java.io.File
 import javax.inject.Inject
 
 @CacheableTask
-abstract class GenerateRulesDocumentationTask @Inject constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
+abstract class GenerateRulesDocumentationTask @Inject constructor(private val workerExecutor: WorkerExecutor) :
+    DefaultTask() {
 
     @get:Classpath
     abstract val rulesClasspath: ConfigurableFileCollection
@@ -42,13 +42,15 @@ abstract class GenerateRulesDocumentationTask @Inject constructor(private val wo
             ?: emptySet()
 
         val workQueue: WorkQueue = workerExecutor.classLoaderIsolation {
-            classpath.from(rulesClasspath)
+            it.classpath.from(rulesClasspath)
         }
 
-        workQueue.submit(GenerateDocsWorkAction::class) {
-            getOwnArchRulesClasses().set(ownArchRulesClasses)
-            getOutputFile().set(this@GenerateRulesDocumentationTask.outputFile.get().asFile)
-            getLibraryName().set(this@GenerateRulesDocumentationTask.libraryName.get())
+        workQueue.submit(GenerateDocsWorkAction::class.java) {
+            it.apply {
+                getOwnArchRulesClasses().set(ownArchRulesClasses)
+                getOutputFile().set(this@GenerateRulesDocumentationTask.outputFile.get().asFile)
+                getLibraryName().set(this@GenerateRulesDocumentationTask.libraryName.get())
+            }
         }
     }
 }

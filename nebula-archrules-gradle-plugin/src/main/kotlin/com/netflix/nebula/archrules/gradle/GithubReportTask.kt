@@ -79,10 +79,10 @@ abstract class GithubReportTask @Inject constructor(private var workerExecutor: 
             .flatMap { it.value }
             .map { fromRuleResult(projectRoot.get().asFile, sourceFiles, it) }
         val workQueue: WorkQueue = workerExecutor
-            .classLoaderIsolation { classpath.from(reportingClasspath) }
+            .classLoaderIsolation { it.classpath.from(reportingClasspath) }
         workQueue.submit(GithubAnnotationJsonReportWorkAction::class.java) {
-            getAnnotations().set(annotations)
-            getJsonReportFile().set(githubReportFile.asFile)
+            it.getAnnotations().set(annotations)
+            it.getJsonReportFile().set(githubReportFile.asFile)
         }
     }
 }

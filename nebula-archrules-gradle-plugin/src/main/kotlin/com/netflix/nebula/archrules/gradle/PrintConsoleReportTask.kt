@@ -14,7 +14,6 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.UntrackedTask
 import org.gradle.api.tasks.options.Option
 import org.gradle.internal.logging.text.StyledTextOutputFactory
-import org.gradle.kotlin.dsl.support.get
 import java.io.File
 
 /**
@@ -65,7 +64,7 @@ abstract class PrintConsoleReportTask : DefaultTask() {
 
     @TaskAction
     fun printReport() {
-        val consoleOutput = services.get<StyledTextOutputFactory>().create("archrules")
+        val consoleOutput = services.get(StyledTextOutputFactory::class.java).create("archrules")
         val list = dataFiles.files
             .filter(File::exists)
             .flatMap { ViolationsUtil.readDetails(it) }
