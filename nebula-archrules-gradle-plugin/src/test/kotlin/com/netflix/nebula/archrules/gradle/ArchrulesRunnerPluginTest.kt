@@ -18,8 +18,6 @@ import nebula.test.dsl.subProject
 import nebula.test.dsl.test
 import nebula.test.dsl.testProject
 import nebula.test.dsl.withGradle
-import org.gradle.kotlin.dsl.findByType
-import org.gradle.kotlin.dsl.named
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
@@ -115,11 +113,11 @@ class ArchrulesRunnerPluginTest {
         val project = ProjectBuilder.builder().build()
         project.plugins.apply("java")
         project.plugins.apply("com.netflix.nebula.archrules.runner")
-        val consoleReport = project.tasks.named<PrintConsoleReportTask>("archRulesConsoleReport")
+        val consoleReport = project.tasks.named("archRulesConsoleReport", PrintConsoleReportTask::class.java)
         assertThat(consoleReport.get().dataFiles.files)
             .`as`("console report inputs are correct")
             .hasSize(2)
-        val jsonReport = project.tasks.named<PrintJsonReportTask>("archRulesJsonReport")
+        val jsonReport = project.tasks.named("archRulesJsonReport", PrintJsonReportTask::class.java)
         assertThat(jsonReport.get().dataFiles.files)
             .`as`("json report inputs are correct")
             .hasSize(2)
@@ -130,7 +128,7 @@ class ArchrulesRunnerPluginTest {
         val project = ProjectBuilder.builder().build()
         project.plugins.apply("java")
         project.plugins.apply("com.netflix.nebula.archrules.runner")
-        val extension = project.extensions.findByType<ArchrulesExtension>()!!
+        val extension = project.extensions.getByType(ArchrulesExtension::class.java)
         assertThat(extension.consoleReportEnabled.get()).isTrue()
         assertThat(extension.jsonReportEnabled.get()).isTrue()
         assertThat(extension.sourceSetsToSkip.get()).containsExactly("archRulesTest")

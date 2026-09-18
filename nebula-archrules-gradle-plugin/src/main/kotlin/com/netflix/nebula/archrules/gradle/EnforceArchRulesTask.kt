@@ -54,8 +54,8 @@ abstract class EnforceArchRulesTask : DefaultTask() {
             val id = ProblemId.create(rule.ruleName, rule.description, ArchRulesProblems.ARCH_RULES)
             results.forEach { result ->
                 val problem = problems.reporter.create(id) {
-                    details(result.message)
-                    solution(result.rule.description)
+                    it.details(result.message)
+                    it.solution(result.rule.description)
                 }
                 problems.reporter.report(problem)
             }
@@ -65,7 +65,7 @@ abstract class EnforceArchRulesTask : DefaultTask() {
         if (criticalFailures.isNotEmpty()) {
             val id = ProblemId.create("ArchRules", "ArchRules Critical Failure", ArchRulesProblems.ARCH_RULES)
             val problem = problems.reporter.create(id) {
-                solution("Fix critical errors reported in Problems Report")
+                it.solution("Fix critical errors reported in Problems Report")
             }
             problems.reporter.throwing(
                 VerificationException(
@@ -75,25 +75,6 @@ abstract class EnforceArchRulesTask : DefaultTask() {
                         }
                     }"
                 ), problem)
-        }
-    }
-
-    fun priorityToSeverity(priority: Priority): Severity {
-        return if (shouldFail(priority)) {
-            Severity.ERROR
-        } else if (shouldWarn(priority)) {
-            Severity.WARNING
-        } else {
-            Severity.ADVICE
-        }
-    }
-
-    fun shouldWarn(failurePriority: Priority): Boolean {
-        return when (warningThreshold.orNull) {
-            Priority.HIGH -> failurePriority == Priority.HIGH
-            Priority.MEDIUM -> failurePriority == Priority.MEDIUM || failurePriority == Priority.HIGH
-            Priority.LOW -> true
-            null -> false
         }
     }
 

@@ -14,7 +14,6 @@ import nebula.test.dsl.src
 import nebula.test.dsl.subProject
 import nebula.test.dsl.testProject
 import nebula.test.dsl.withGradle
-import org.gradle.kotlin.dsl.findByType
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -97,7 +96,7 @@ class ArchrulesAggregateReportPluginTest {
         val project = org.gradle.testfixtures.ProjectBuilder.builder().build()
         project.plugins.apply("java")
         project.plugins.apply("com.netflix.nebula.archrules.aggregate")
-        val extension = project.extensions.findByType<ArchrulesAggregateExtension>()!!
+        val extension = project.extensions.getByType(ArchrulesAggregateExtension::class.java)
         assertThat(extension.skipPassingSummaries.get()).isFalse()
         assertThat(extension.consoleDetailsThreshold.get()).isEqualTo(Priority.MEDIUM)
     }

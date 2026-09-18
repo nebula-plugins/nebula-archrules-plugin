@@ -13,12 +13,6 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.SourceSet
 import org.gradle.internal.extensions.stdlib.capitalized
-import org.gradle.kotlin.dsl.add
-import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.getByType
-import org.gradle.kotlin.dsl.named
-import org.gradle.kotlin.dsl.register
-import org.gradle.kotlin.dsl.withType
 import javax.inject.Inject
 
 class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Plugin<Project> {
@@ -35,15 +29,15 @@ class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Pl
         project.configurations.dependencyScope("archRules")
         project.plugins.withId("java") {
             project.dependencies.attributesSchema.attribute(Usage.USAGE_ATTRIBUTE) {
-                compatibilityRules.add(ArchRuleUsageCompatibilityRule::class)
-                disambiguationRules.add(ArchRuleUsageDisambiguationRule::class) {
-                    params(project.objects.named(Usage::class.java, Usage.JAVA_API))
-                    params(project.objects.named(Usage::class.java, Usage.JAVA_RUNTIME))
-                    params(archRulesUsageAttr)
+                it.compatibilityRules.add(ArchRuleUsageCompatibilityRule::class.java)
+                it.disambiguationRules.add(ArchRuleUsageDisambiguationRule::class.java) {
+                    it.params(project.objects.named(Usage::class.java, Usage.JAVA_API))
+                    it.params(project.objects.named(Usage::class.java, Usage.JAVA_RUNTIME))
+                    it.params(archRulesUsageAttr)
                 }
             }
 
-            val archRulesExt = project.extensions.create<ArchrulesExtension>("archRules")
+            val archRulesExt = project.extensions.create("archRules", ArchrulesExtension::class.java)
             archRulesExt.consoleReportEnabled.convention(true)
             archRulesExt.jsonReportEnabled.convention(true)
             archRulesExt.markdownReportEnabled.convention(true)
@@ -55,9 +49,9 @@ class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Pl
             )
             archRulesExt.sourceSetsToSkip.add("archRulesTest")
             archRulesExt.consoleDetailsThreshold.convention(Priority.MEDIUM)
-            project.extensions.getByType<JavaPluginExtension>().sourceSets
+            project.extensions.getByType(JavaPluginExtension::class.java).sourceSets
                 .configureEach {
-                    project.configureCheckTaskForSourceSet(this, archRulesExt)
+                    project.configureCheckTaskForSourceSet(it, archRulesExt)
                 }
             val archrulesJsonReportingClasspath = project.configurations.detachedConfiguration(
                 project.dependencies.create(ARCHRULES_DEPENDENCY),
@@ -65,72 +59,100 @@ class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Pl
             ).apply {
                 description = "Created by ArchrulesRunnerPlugin to use Jackson in reporting"
             }
-            val jsonReportTask = project.tasks.register<PrintJsonReportTask>("archRulesJsonReport") {
-                dataFiles.from(project.tasks.withType<CheckRulesTask>())
-                getJsonReportFile().set(archRulesReportDir.map { it.file("report.json") })
-                reportingClasspath.setFrom(archrulesJsonReportingClasspath)
-                onlyIf { archRulesExt.jsonReportEnabled.get() }
+            val jsonReportTask = project.tasks.register("archRulesJsonReport", PrintJsonReportTask::class.java) {
+                it.apply {
+                    dataFiles.from(project.tasks.withType(CheckRulesTask::class.java))
+                    getJsonReportFile().set(archRulesReportDir.map { it.file("report.json") })
+                    reportingClasspath.setFrom(archrulesJsonReportingClasspath)
+                    onlyIf { archRulesExt.jsonReportEnabled.get() }
+                }
             }
 
-            val consoleReportTask = project.tasks.register<PrintConsoleReportTask>("archRulesConsoleReport") {
-                dataFiles.from(project.tasks.withType<CheckRulesTask>())
-                summaryForPassingDisabled.set(archRulesExt.skipPassingSummaries)
-                detailsThreshold.set(archRulesExt.consoleDetailsThreshold)
-                onlyIf { archRulesExt.consoleReportEnabled.get() }
-            }
+            val consoleReportTask =
+                project.tasks.register("archRulesConsoleReport", PrintConsoleReportTask::class.java) {
+                    it.apply {
+                        dataFiles.from(project.tasks.withType(CheckRulesTask::class.java))
+                        summaryForPassingDisabled.set(archRulesExt.skipPassingSummaries)
+                        detailsThreshold.set(archRulesExt.consoleDetailsThreshold)
+                        onlyIf { archRulesExt.consoleReportEnabled.get() }
+                    }
+                }
 
-            val markdownReportTask = project.tasks.register<PrintMarkdownReportTask>("archRulesMarkdownReport") {
-                dataFiles.from(project.tasks.withType<CheckRulesTask>())
-                markdownReportFile.set(archRulesReportDir.map { it.file("report.md") })
-                detailsThreshold.set(archRulesExt.consoleDetailsThreshold)
-                onlyIf { archRulesExt.markdownReportEnabled.get() }
-            }
+            val markdownReportTask =
+                project.tasks.register("archRulesMarkdownReport", PrintMarkdownReportTask::class.java) {
+                    it.apply {
+                        dataFiles.from(project.tasks.withType(CheckRulesTask::class.java))
+                        markdownReportFile.set(archRulesReportDir.map { it.file("report.md") })
+                        detailsThreshold.set(archRulesExt.consoleDetailsThreshold)
+                        onlyIf { archRulesExt.markdownReportEnabled.get() }
+                    }
+                }
 
             val javaExt = project.extensions.getByType(JavaPluginExtension::class.java)
             val githubRequested = project.gradle.startParameter.taskRequests.any {
                 (it.projectPath == project.path || it.projectPath == null) && it.args.contains("archRulesGithubReport")
             }
-            val githubReportTask = project.tasks.register<GithubReportTask>("archRulesGithubReport") {
-                dataFiles.from(project.tasks.withType<CheckRulesTask>())
-                githubReportFile.set(archRulesReportDir.map { it.file("github-annotations.json") })
-                sourceFiles.from(javaExt.sourceSets.flatMap { it.allSource })
-                projectRoot.set(project.rootProject.layout.projectDirectory)
-                detailsThreshold.set(archRulesExt.consoleDetailsThreshold)
-                reportingClasspath.setFrom(archrulesJsonReportingClasspath)
-                onlyIf { archRulesExt.githubReportEnabled.get() || githubRequested }
+            val githubReportTask = project.tasks.register("archRulesGithubReport", GithubReportTask::class.java) {
+                it.apply {
+                    dataFiles.from(project.tasks.withType(CheckRulesTask::class.java))
+                    githubReportFile.set(archRulesReportDir.map { it.file("github-annotations.json") })
+                    sourceFiles.from(javaExt.sourceSets.flatMap { it.allSource })
+                    projectRoot.set(project.rootProject.layout.projectDirectory)
+                    detailsThreshold.set(archRulesExt.consoleDetailsThreshold)
+                    reportingClasspath.setFrom(archrulesJsonReportingClasspath)
+                    onlyIf { archRulesExt.githubReportEnabled.get() || githubRequested }
+                }
             }
 
             project.configurations.consumable("archRulesReportElements") {
-                description = "Report data for ArchRules"
-                outgoing.artifacts(
-                    project.provider { (project.tasks.withType<CheckRulesTask>().flatMap { it.outputs.files }) }
-                ) {
-                    type = ArtifactTypeDefinition.BINARY_DATA_TYPE
-                    builtBy(project.tasks.withType<CheckRulesTask>())
-                }
-                attributes {
-                    attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category.VERIFICATION))
-                    attribute(VerificationType.VERIFICATION_TYPE_ATTRIBUTE, project.objects.named("arch-rules"))
+                it.apply {
+                    description = "Report data for ArchRules"
+                    outgoing.artifacts(
+                        project.provider {
+                            project.tasks.withType(CheckRulesTask::class.java)
+                                .flatMap { it.outputs.files }
+                        }
+                    ) {
+                        it.type = ArtifactTypeDefinition.BINARY_DATA_TYPE
+                        it.builtBy(project.tasks.withType(CheckRulesTask::class.java))
+                    }
+                    attributes {
+                        it.attribute(
+                            Category.CATEGORY_ATTRIBUTE,
+                            project.objects.named(Category::class.java, Category.VERIFICATION)
+                        )
+                        it.attribute(
+                            VerificationType.VERIFICATION_TYPE_ATTRIBUTE,
+                            project.objects.named(VerificationType::class.java, "arch-rules")
+                        )
+                    }
                 }
             }
 
-            val enforceTask = project.tasks.register<EnforceArchRulesTask>("enforceArchRules") {
-                dataFiles.from(project.tasks.withType<CheckRulesTask>())
-                failureThreshold.set(archRulesExt.failureThreshold)
-                warningThreshold.set(archRulesExt.consoleDetailsThreshold)
+            val enforceTask = project.tasks.register("enforceArchRules", EnforceArchRulesTask::class.java) {
+                it.apply {
+                    dataFiles.from(project.tasks.withType(CheckRulesTask::class.java))
+                    failureThreshold.set(archRulesExt.failureThreshold)
+                    warningThreshold.set(archRulesExt.consoleDetailsThreshold)
+                }
             }
 
             project.tasks.named("check") {
-                dependsOn(enforceTask)
-                finalizedBy(jsonReportTask, markdownReportTask, consoleReportTask, githubReportTask)
+                it.dependsOn(enforceTask)
+                it.finalizedBy(jsonReportTask, markdownReportTask, consoleReportTask, githubReportTask)
             }
         }
 
         // workaround for https://github.com/google/protobuf-gradle-plugin/issues/794
         project.pluginManager.withPlugin("com.google.protobuf") {
             project.configurations.configureEach {
-                if (name.endsWith("compileProtoPath") || name.endsWith("CompileProtoPath")) {
-                    attributes.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named<Category>(Category.LIBRARY))
+                it.apply {
+                    if (name.endsWith("compileProtoPath") || name.endsWith("CompileProtoPath")) {
+                        attributes.attribute(
+                            Category.CATEGORY_ATTRIBUTE,
+                            project.objects.named(Category::class.java, Category.LIBRARY)
+                        )
+                    }
                 }
             }
         }
@@ -139,54 +161,61 @@ class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Pl
     fun Project.configureCheckTaskForSourceSet(sourceSet: SourceSet, ext: ArchrulesExtension) {
         val archRulesReportDir = project.layout.buildDirectory.dir("reports/archrules")
         val sourceSetArchRulesRuntime = configurations.resolvable(sourceSet.name + "ArchRulesRuntime") {
-            extendsFrom(
-                project.configurations.getByName("archRules"),
-                configurations.getByName(sourceSet.compileClasspathConfigurationName)
-            )
-            attributes.addAllLater(project.configurations.getByName(sourceSet.compileClasspathConfigurationName).attributes)
-            attributes {
-                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements.CLASSES_AND_RESOURCES))
-                attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, ARCH_RULES)
-                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(ARCH_RULES))
-            }
+            it.apply {
+                extendsFrom(
+                    project.configurations.getByName("archRules"),
+                    configurations.getByName(sourceSet.compileClasspathConfigurationName)
+                )
+                attributes.addAllLater(project.configurations.getByName(sourceSet.compileClasspathConfigurationName).attributes)
+                attributes {
+                    it.attribute(
+                        LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+                        project.objects.named(LibraryElements::class.java, LibraryElements.CLASSES_AND_RESOURCES)
+                    )
+                    it.attribute(ArchRuleAttribute.ARCH_RULES_ATTRIBUTE, ARCH_RULES)
+                    it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage::class.java, ARCH_RULES))
+                }
 
-            shouldResolveConsistentlyWith(configurations.getByName(sourceSet.compileClasspathConfigurationName))
+                shouldResolveConsistentlyWith(configurations.getByName(sourceSet.compileClasspathConfigurationName))
+            }
         }
 
-        tasks.register<CheckRulesTask>("checkArchRules" + sourceSet.name.capitalized()) {
-            description = "Checks ArchRules on ${sourceSet.name}"
-            rulesClasspath.setFrom(sourceSetArchRulesRuntime)
-            priorityOverridesByName.set(
-                ext.ruleOverrides.map {
-                    it.mapValues { it.value.priority }
-                        .filterValues { it != null }
-                        .mapValues { it.value!! } // could be improved by https://youtrack.jetbrains.com/issue/KT-4734
-                }
-            )
-            priorityOverridesByClass.set(
-                ext.ruleClassOverrides.map {
-                    it.mapValues { it.value.priority }
-                        .filterValues { it != null }
-                        .mapValues { it.value!! } // could be improved by https://youtrack.jetbrains.com/issue/KT-4734
-                }
-            )
-            excludedRules.set(
-                ext.ruleOverrides.map {
-                    it.filter { it.value.sourceSetsToSkip.contains(sourceSet.name) }.map { it.key }
-                }
-            )
-            excludedRuleClasses.set(
-                ext.ruleClassOverrides.map {
-                    it.filter { it.value.sourceSetsToSkip.contains(sourceSet.name) }.map { it.key }
-                }
-            )
-            dataFile.set(archRulesReportDir.map {
-                it.file(sourceSet.name + ".data")
-            })
-            sourcesToCheck.from(sourceSet.output.classesDirs)
-            dependsOn(project.tasks.named(sourceSet.classesTaskName))
-            val sourceSetName = sourceSet.name
-            skip.set(ext.sourceSetsToSkip.map { it.contains(sourceSetName) })
+        tasks.register("checkArchRules" + sourceSet.name.capitalized(), CheckRulesTask::class.java) {
+            it.apply {
+                description = "Checks ArchRules on ${sourceSet.name}"
+                rulesClasspath.setFrom(sourceSetArchRulesRuntime)
+                priorityOverridesByName.set(
+                    ext.ruleOverrides.map {
+                        it.mapValues { it.value.priority }
+                            .filterValues { it != null }
+                            .mapValues { it.value!! } // could be improved by https://youtrack.jetbrains.com/issue/KT-4734
+                    }
+                )
+                priorityOverridesByClass.set(
+                    ext.ruleClassOverrides.map {
+                        it.mapValues { it.value.priority }
+                            .filterValues { it != null }
+                            .mapValues { it.value!! } // could be improved by https://youtrack.jetbrains.com/issue/KT-4734
+                    }
+                )
+                excludedRules.set(
+                    ext.ruleOverrides.map {
+                        it.filter { it.value.sourceSetsToSkip.contains(sourceSet.name) }.map { it.key }
+                    }
+                )
+                excludedRuleClasses.set(
+                    ext.ruleClassOverrides.map {
+                        it.filter { it.value.sourceSetsToSkip.contains(sourceSet.name) }.map { it.key }
+                    }
+                )
+                dataFile.set(archRulesReportDir.map {
+                    it.file(sourceSet.name + ".data")
+                })
+                sourcesToCheck.from(sourceSet.output.classesDirs)
+                dependsOn(project.tasks.named(sourceSet.classesTaskName))
+                val sourceSetName = sourceSet.name
+                skip.set(ext.sourceSetsToSkip.map { it.contains(sourceSetName) })
+            }
         }
     }
 }
