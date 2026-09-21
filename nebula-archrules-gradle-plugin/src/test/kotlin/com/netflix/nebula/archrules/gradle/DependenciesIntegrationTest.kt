@@ -1,6 +1,7 @@
 package com.netflix.nebula.archrules.gradle
 
 import nebula.test.dsl.TestProjectBuilder
+import nebula.test.dsl.dependencies
 import nebula.test.dsl.plugins
 import nebula.test.dsl.properties
 import nebula.test.dsl.repositories
@@ -22,28 +23,28 @@ internal class DependenciesIntegrationTest {
             configurationCache(true)
             isolatedProjects(true)
         }
-        subProject("runtime-library"){
+        subProject("runtime-library") {
             plugins {
                 id("java-library")
             }
         }
-        subProject("compile-library"){
+        subProject("compile-library") {
             plugins {
                 id("java-library")
             }
         }
-        subProject("archrules-implementation-library"){
+        subProject("archrules-implementation-library") {
             plugins {
                 id("java-library")
             }
         }
-        subProject("api-library"){
+        subProject("api-library") {
             plugins {
                 id("java-library")
-                dependencies(
-                    """implementation(project(":runtime-library"))""",
-                    """api(project(":compile-library"))"""
-                )
+            }
+            dependencies {
+                implementation(project(":runtime-library"))
+                api(project(":compile-library"))
             }
         }
         subProject("library-with-rules") {
@@ -82,7 +83,7 @@ internal class DependenciesIntegrationTest {
                 printDeps(it)
             }
         }
-        subProject("consumer"){
+        subProject("consumer") {
             plugins {
                 id("java")
                 id("com.netflix.nebula.archrules.runner")
@@ -132,9 +133,11 @@ internal class DependenciesIntegrationTest {
             dependenciesSetup()
         }
 
-        val libraryWithRules = runner.run(":consumer:dependencyInsight",
+        val libraryWithRules = runner.run(
+            ":consumer:dependencyInsight",
             "--configuration", "mainArchRulesRuntime",
-            "--dependency", "library-with-rules")
+            "--dependency", "library-with-rules"
+        )
         assertThat(libraryWithRules.output).contains("Variant archRulesRuntimeElements")
 
         val printDeps = runner.run(":consumer:dependencies", "--configuration", "mainArchRulesRuntime")
@@ -155,9 +158,11 @@ internal class DependenciesIntegrationTest {
             dependenciesSetup()
         }
 
-        val libraryWithRules = runner.run(":another-library-with-rules:dependencyInsight",
+        val libraryWithRules = runner.run(
+            ":another-library-with-rules:dependencyInsight",
             "--configuration", "archRulesCompileClasspath",
-            "--dependency", "library-with-rules")
+            "--dependency", "library-with-rules"
+        )
         assertThat(libraryWithRules.output)
             .contains("Variant archRulesRuntimeElements")
     }
