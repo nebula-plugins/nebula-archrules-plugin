@@ -11,10 +11,11 @@ dependencies {
         because("we expose archunit priority class via Extension")
     }
     implementation(project(":nebula-archrules-core"))
-    compileOnly("tools.jackson.core:jackson-databind:3.1.0") // keep in sync with ArchrulesRunnerPlugin
+    compileOnly(libs.jackson.databind) // keep in sync with ArchrulesRunnerPlugin
 
     testImplementation("net.javacrumbs.json-unit:json-unit-assertj:5.0.0")
     testImplementation("org.json:json:20250517")
+    testImplementation(libs.jackson.databind)
     testImplementation("net.lingala.zip4j:zip4j:2.11.5")
 }
 gradlePlugin {

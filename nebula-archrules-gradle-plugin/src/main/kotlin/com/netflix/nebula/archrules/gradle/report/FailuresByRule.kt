@@ -8,15 +8,13 @@ typealias FailuresByRule = Map<Rule, List<RuleResult>>
 
 object FailuresByRuleBuilder {
     /**
-     * Rules which fail due to no match should only count as a failure if they fail for every source set in which that rule was run
+     * Same as [ResultsByRule] but filters out passing rules
      */
     @JvmStatic
     fun build(violations: List<RuleResult>): FailuresByRule {
-        val byType = violations.groupBy { it.rule() }.mapValues { it.value.toSet() }
-        return byType
-            .mapValues { (_, fullSet) ->
-                fullSet.filter { !(it.status() == RuleResultStatus.NO_MATCH && fullSet.size != 1) }
+        return ResultsByRuleBuilder.build(violations)
+            .mapValues {
+                it.value.filter { it.status() != RuleResultStatus.PASS }
             }
-            .mapValues { it.value.filter { it.status() != RuleResultStatus.PASS } }
     }
 }
