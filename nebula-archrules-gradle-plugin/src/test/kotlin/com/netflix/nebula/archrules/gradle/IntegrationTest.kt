@@ -3,6 +3,7 @@ package com.netflix.nebula.archrules.gradle
 import nebula.test.dsl.ProjectBuilder
 import nebula.test.dsl.TestKitAssertions.assertThat
 import nebula.test.dsl.TestProjectBuilder
+import nebula.test.dsl.dependencies
 import nebula.test.dsl.main
 import nebula.test.dsl.plugins
 import nebula.test.dsl.properties
@@ -173,7 +174,9 @@ internal class IntegrationTest {
                 buildCache(true)
             }
             projectWithRules {
-                dependencies("""implementation("com.netflix.nebula:archrules-deprecation:latest.release")""")
+                dependencies {
+                    implementation("com.netflix.nebula:archrules-deprecation:latest.release")
+                }
             }
             projectWithCodeUsingDeprecatedCode {
                 plugins {
@@ -201,9 +204,9 @@ internal class IntegrationTest {
             repositories {
                 mavenCentral()
             }
-            dependencies(
-                """implementation(project(":library-with-rules"))"""
-            )
+            dependencies {
+                implementation(project(":library-with-rules"))
+            }
             src {
                 main {
                     exampleDeprecatedUsage()
