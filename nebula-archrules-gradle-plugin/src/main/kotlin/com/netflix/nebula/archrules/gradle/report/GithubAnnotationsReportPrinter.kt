@@ -7,11 +7,15 @@ import java.io.File
 import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 
-class GithubAnnotationsReportPrinter(
+class GithubAnnotationsReportPrinter internal constructor(
     val writer: OutputStream,
     val sourceFiles: Iterable<File>,
-    val projectRoot: File
+    val projectRoot: File,
+    private val sourceFileIndex: SourceFileIndex
 ) : TextReportPrinter {
+    constructor(writer: OutputStream, sourceFiles: Iterable<File>, projectRoot: File) :
+        this(writer, sourceFiles, projectRoot, SourceFileIndex(projectRoot, sourceFiles))
+
     override fun printSummaryHeader() {
 
     }
@@ -44,11 +48,7 @@ class GithubAnnotationsReportPrinter(
         }
         val location = result.message().substringAfterLast("in (").substringBefore(")")
         val fileName = location.split(":")[0]
-        val filePath = sourceFiles
-            .filter { it.name == fileName }
-            .map { it.relativeTo(projectRoot).path }
-            .firstOrNull()
-            ?: fileName
+        val filePath = sourceFileIndex.pathFor(fileName)
         val lineNumber = location.split(":")[1].toIntOrNull()
         val line = buildString {
             append("::$level file=$filePath")

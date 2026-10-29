@@ -76,7 +76,7 @@ abstract class PrintMarkdownReportTask : DefaultTask() {
                 noFilters || matchesRule || matchesClass
             }
             .toList()
-        markdownReportFile.get().asFile.outputStream().use {
+        markdownReportFile.get().asFile.outputStream().buffered().use {
             MarkdownReportPrinter(it)
                 .print(list, false, true, detailsThreshold.orNull)
         }

@@ -59,4 +59,41 @@ internal class GithubAnnotationsReportPrinterTest {
                 .startsWith("::warning file=src/main/ArchrulesLibraryPlugin.kt,line=1,title=description::Method ")
         }
     }
+
+    @Test
+    fun `console and json preserve first duplicate source and missing source fallback`() {
+        val sources = listOf(
+            projectDir.resolve("src/test/java/Example.java"),
+            projectDir.resolve("src/main/java/Example.java")
+        )
+        val rule = Rule("RuleClass", "RuleName", "description", Priority.MEDIUM)
+        val repeated = RuleResult(rule, "Class <example.Example> violates rule in (Example.java:27)", RuleResultStatus.FAIL)
+        val missing = RuleResult(rule, "Class <example.Missing> violates rule in (Missing.java:9)", RuleResultStatus.FAIL)
+        val index = SourceFileIndex(projectDir, sources)
+        val output = ByteArrayOutputStream()
+        val printer = GithubAnnotationsReportPrinter(output, sources, projectDir, index)
+
+        listOf(repeated, repeated, missing).forEach { printer.printRuleViolationDetail(it) }
+
+        assertThat(output.toString(StandardCharsets.UTF_8).lines().filter { it.isNotEmpty() }).containsExactly(
+            "::warning file=src/test/java/Example.java,line=27,title=description::Class <example.Example> violates rule ",
+            "::warning file=src/test/java/Example.java,line=27,title=description::Class <example.Example> violates rule ",
+            "::warning file=Missing.java,line=9,title=description::Class <example.Missing> violates rule "
+        )
+        assertThat(fromRuleResult(index, repeated).path()).isEqualTo("src/test/java/Example.java")
+        assertThat(fromRuleResult(index, missing).path()).isEqualTo("Missing.java")
+        assertThat(fromRuleResult(projectDir, sources, repeated)).isEqualTo(fromRuleResult(index, repeated))
+    }
+
+    @Test
+    fun `passing only report does not enumerate source files`() {
+        val sources = Iterable<File> { error("Sources are unnecessary without annotations") }
+        val output = ByteArrayOutputStream()
+        val rule = Rule("RuleClass", "RuleName", "description", Priority.MEDIUM)
+
+        GithubAnnotationsReportPrinter(output, sources, projectDir)
+            .print(listOf(RuleResult(rule, "", RuleResultStatus.PASS)), false, true, null)
+
+        assertThat(output.size()).isZero()
+    }
 }
