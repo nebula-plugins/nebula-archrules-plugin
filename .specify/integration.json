@@ -1,0 +1,15 @@
+{
+  "version": "1.2.5",
+  "integration_state_schema": 1,
+  "installed_integrations": [
+    "none"
+  ],
+  "integration_settings": {
+    "none": {
+      "script": "sh",
+      "invoke_separator": "."
+    }
+  },
+  "integration": "none",
+  "default_integration": "none"
+}
