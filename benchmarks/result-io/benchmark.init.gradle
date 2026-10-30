@@ -1,0 +1,39 @@
+import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.jvm.toolchain.JavaToolchainService
+
+// Opt-in contributor benchmark; this script is never applied by consumer plugins.
+allprojects { benchmarkProject ->
+    if (benchmarkProject.path == ':nebula-archrules-gradle-plugin') {
+        benchmarkProject.pluginManager.withPlugin('java') {
+            def main = benchmarkProject.extensions.getByType(JavaPluginExtension).sourceSets.getByName('main')
+            def toolchains = benchmarkProject.extensions.getByType(JavaToolchainService)
+            def compiled = benchmarkProject.tasks.register('compileResultIoBenchmark', JavaCompile) {
+                dependsOn(benchmarkProject.tasks.named(main.classesTaskName))
+                source(benchmarkProject.rootProject.file('benchmarks/result-io/ResultIoBenchmark.java'))
+                source(benchmarkProject.rootProject.file('benchmarks/result-io/SourceLookupBenchmark.java'))
+                classpath = main.runtimeClasspath
+                destinationDirectory.set(benchmarkProject.layout.buildDirectory.dir('result-io-benchmark/classes'))
+                javaCompiler.set(toolchains.compilerFor { languageVersion.set(JavaLanguageVersion.of(17)) })
+                options.release.set(17)
+            }
+            benchmarkProject.tasks.register('benchmarkResultIo', JavaExec) {
+                dependsOn(compiled)
+                classpath = benchmarkProject.files(compiled.flatMap { it.destinationDirectory }) + main.runtimeClasspath
+                mainClass.set('ResultIoBenchmark')
+                javaLauncher.set(toolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(17)) })
+                maxHeapSize = '256m'
+                args(benchmarkProject.layout.buildDirectory.dir('result-io-benchmark/results').get().asFile.absolutePath)
+            }
+            benchmarkProject.tasks.register('benchmarkSourceLookup', JavaExec) {
+                dependsOn(compiled)
+                classpath = benchmarkProject.files(compiled.flatMap { it.destinationDirectory }) + main.runtimeClasspath
+                mainClass.set('SourceLookupBenchmark')
+                javaLauncher.set(toolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(17)) })
+                maxHeapSize = '256m'
+                args(benchmarkProject.layout.buildDirectory.dir('result-io-benchmark/sources').get().asFile.absolutePath)
+            }
+        }
+    }
+}

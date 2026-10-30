@@ -257,6 +257,14 @@ If you would like to only display certain rules or rule classes on the CLI, you 
 The Archrules Library plugin produces a separate Jar for the `archRules` sourceset, which is exposed as an alternate variant of the library. It also will automatically generate a `META-INF/services` file which contains a reference for each implementation of `com.netflix.nebula.archrules.core.ArchRulesService` to declare it as a service provider.
 The Archrules Runner plugin uses a Java [ServiceLoader](https://devdocs.io/openjdk~25/java.base/java/util/serviceloader) to discover all implementations of `com.netflix.nebula.archrules.core.ArchRulesService` in the rule libraries.
 
+## Contributing specifications
+
+Feature specifications, implementation plans, and validation instructions live in
+[specs/](specs/README.md), alongside a shared [Spec Kit](https://github.com/github/spec-kit)
+setup and [project constitution](.specify/memory/constitution.md).
+The result-I/O and reporting changes include reproducible
+[performance benchmarks](benchmarks/result-io/README.md).
+
 ## LICENSE
 
 Copyright 2025 Netflix, Inc.

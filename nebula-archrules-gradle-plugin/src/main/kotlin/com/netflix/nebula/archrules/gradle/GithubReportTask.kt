@@ -4,6 +4,7 @@ import com.netflix.nebula.archrules.gradle.report.GithubAnnotationJsonReportWork
 import com.netflix.nebula.archrules.gradle.report.fromRuleResult
 import com.netflix.nebula.archrules.gradle.report.FailuresByRuleBuilder
 import com.netflix.nebula.archrules.gradle.report.GithubAnnotationsReportPrinter
+import com.netflix.nebula.archrules.gradle.report.SourceFileIndex
 import com.tngtech.archunit.lang.Priority
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
@@ -70,14 +71,17 @@ abstract class GithubReportTask @Inject constructor(private var workerExecutor: 
             .filter(File::exists)
             .flatMap { ViolationsUtil.readDetails(it) }
             .toList()
-        GithubAnnotationsReportPrinter(System.out, sourceFiles, projectRoot.get().asFile)
+        val root = projectRoot.get().asFile
+        val sources = sourceFiles
+        val sourceFileIndex = SourceFileIndex(root, sources)
+        GithubAnnotationsReportPrinter(System.out, sources, root, sourceFileIndex)
             .print(list, true, true, detailsThreshold.orNull)
 
         val annotations = FailuresByRuleBuilder.build(list)
             .mapValues { it.value.filter { it.rule().priority().meetsThreshold(detailsThreshold.get()) } }
             .filter { it.value.isNotEmpty() }
             .flatMap { it.value }
-            .map { fromRuleResult(projectRoot.get().asFile, sourceFiles, it) }
+            .map { fromRuleResult(sourceFileIndex, it) }
         val workQueue: WorkQueue = workerExecutor
             .classLoaderIsolation { it.classpath.from(reportingClasspath) }
         workQueue.submit(GithubAnnotationJsonReportWorkAction::class.java) {

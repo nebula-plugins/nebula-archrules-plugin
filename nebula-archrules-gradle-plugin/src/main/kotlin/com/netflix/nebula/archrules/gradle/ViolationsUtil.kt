@@ -21,7 +21,7 @@ class ViolationsUtil {
         fun readDetails(dataFile: File): List<RuleResult> {
             val list: MutableList<RuleResult> = mutableListOf()
             try {
-                ObjectInputStream(FileInputStream(dataFile)).use { objectInputStream ->
+                ObjectInputStream(FileInputStream(dataFile).buffered()).use { objectInputStream ->
                     val numObjects = objectInputStream.readInt()
                     repeat(numObjects) {
                         list.add(objectInputStream.readObject() as RuleResult)
@@ -37,7 +37,7 @@ class ViolationsUtil {
 
         @JvmStatic
         fun writeDetails(dataFile: File, violationList: List<RuleResult>) {
-            ObjectOutputStream(FileOutputStream(dataFile)).use { out ->
+            ObjectOutputStream(FileOutputStream(dataFile).buffered()).use { out ->
                 out.writeInt(violationList.size)
                 violationList.forEach {
                     out.writeObject(it)

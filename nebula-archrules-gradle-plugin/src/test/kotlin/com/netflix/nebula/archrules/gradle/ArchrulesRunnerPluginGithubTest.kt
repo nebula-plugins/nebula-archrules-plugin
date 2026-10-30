@@ -8,14 +8,18 @@ import nebula.test.dsl.plugins
 import nebula.test.dsl.properties
 import nebula.test.dsl.repositories
 import nebula.test.dsl.rootProject
+import nebula.test.dsl.run
 import nebula.test.dsl.settings
 import nebula.test.dsl.src
 import nebula.test.dsl.subProject
 import nebula.test.dsl.test
 import nebula.test.dsl.testProject
+import nebula.test.dsl.withGradle
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import java.io.File
 
 class ArchrulesRunnerPluginGithubTest {
@@ -58,8 +62,9 @@ class ArchrulesRunnerPluginGithubTest {
         }
     }
 
-    @Test
-    fun `github report can be enabled via extension`() {
+    @ParameterizedTest
+    @EnumSource(SupportedGradleVersion::class)
+    fun `github report can be enabled via extension`(version: SupportedGradleVersion) {
         val runner = testProject(projectDir) {
             setupConsumerProject {
                 rawBuildScript(
@@ -72,7 +77,7 @@ archRules {
             }
         }
 
-        val result = runner.run("check", "--stacktrace", "-x", "test")
+        val result = runner.run("check", "--stacktrace", "-x", "test") { withGradle(version.version) }
 
         assertThat(result.task(":archRulesGithubReport"))
             .`as`("github report task runs")
@@ -91,6 +96,13 @@ archRules {
             .exists()
             .content()
             .startsWith("""{"annotations":[{"path":"src/main/java/com/example/consumer/FailingCode.java","annotation_level":"warning","title":"deprecatedForRemoval","message"""")
+
+        val expected = githubReport.readText()
+        org.assertj.core.api.Assertions.assertThat(githubReport.delete()).isTrue()
+        val reused = runner.run("check", "--stacktrace", "-x", "test") { withGradle(version.version) }
+        org.assertj.core.api.Assertions.assertThat(reused.output).contains("Reusing configuration cache")
+        assertThat(reused.task(":archRulesGithubReport")).hasOutcome(TaskOutcome.SUCCESS)
+        org.assertj.core.api.Assertions.assertThat(githubReport.readText()).isEqualTo(expected)
     }
 
     @Test

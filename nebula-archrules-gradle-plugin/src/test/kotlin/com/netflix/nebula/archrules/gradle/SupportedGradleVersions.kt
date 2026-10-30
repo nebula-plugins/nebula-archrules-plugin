@@ -4,5 +4,6 @@ import nebula.test.dsl.Gradle
 
 enum class SupportedGradleVersion(val version: Gradle) {
     GRADLE_9_2(Gradle.ofVersion("9.2.0")),
+    GRADLE_9_8_2(Gradle.ofVersion("9.8.2")),
     CURRENT(Gradle.current())
 }

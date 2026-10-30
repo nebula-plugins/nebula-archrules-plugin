@@ -4,7 +4,17 @@ import com.netflix.nebula.archrules.gradle.RuleResult
 import com.tngtech.archunit.lang.Priority
 import java.io.File
 
-fun fromRuleResult(projectRoot: File, sourceFiles: Iterable<File>, result: RuleResult): GithubAnnotation {
+fun fromRuleResult(projectRoot: File, sourceFiles: Iterable<File>, result: RuleResult): GithubAnnotation =
+    annotationFor(result) { fileName ->
+        sourceFiles.filter { it.name == fileName }
+            .map { it.relativeTo(projectRoot).path }
+            .firstOrNull() ?: fileName
+    }
+
+internal fun fromRuleResult(sourceFileIndex: SourceFileIndex, result: RuleResult): GithubAnnotation =
+    annotationFor(result, sourceFileIndex::pathFor)
+
+private inline fun annotationFor(result: RuleResult, sourcePath: (String) -> String): GithubAnnotation {
     val level = when (result.rule.priority) {
         Priority.LOW -> "notice"
         Priority.MEDIUM -> "warning"
@@ -12,10 +22,7 @@ fun fromRuleResult(projectRoot: File, sourceFiles: Iterable<File>, result: RuleR
     }
     val location = result.message().substringAfterLast("in (").substringBefore(")")
     val fileName = location.split(":")[0]
-    val filePath = sourceFiles
-        .filter { it.name == fileName }
-        .map { it.relativeTo(projectRoot).path }
-        .firstOrNull() ?: fileName
+    val filePath = sourcePath(fileName)
     val lineNumber: Int = location.split(":")[1].toIntOrNull()!!
     return GithubAnnotation(
         filePath,
