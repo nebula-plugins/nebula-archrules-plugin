@@ -97,7 +97,8 @@ class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Pl
                     dataFiles.from(project.tasks.withType(CheckRulesTask::class.java))
                     githubReportFile.set(archRulesReportDir.map { it.file("github-annotations.json") })
                     sourceFiles.from(javaExt.sourceSets.flatMap { it.allSource })
-                    projectRoot.set(project.rootProject.layout.projectDirectory)
+                    // Root directory is immutable build identity; another project's layout is not isolated.
+                    projectRoot.fileValue(project.rootDir)
                     detailsThreshold.set(archRulesExt.consoleDetailsThreshold)
                     reportingClasspath.setFrom(archrulesJsonReportingClasspath)
                     onlyIf { archRulesExt.githubReportEnabled.get() || githubRequested }
