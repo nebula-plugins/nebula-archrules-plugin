@@ -27,41 +27,61 @@ import java.io.File
 import javax.inject.Inject
 
 /**
- * Prints detail information about {@link RuleResult}s to the console for github annotations
- * @see: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#setting-a-notice-message
+ * Emits GitHub Actions workflow commands and writes a JSON annotation report for rule violations.
+ *
+ * Source paths in both outputs are relative to [projectRoot]. The task consumes serialized
+ * [RuleResult]s from [dataFiles] and uses [sourceFiles] to locate the referenced source files.
+ *
+ * @see [GitHub Actions workflow commands](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#setting-a-notice-message)
  */
 @UntrackedTask(because = "Provides console feedback")
 abstract class GithubReportTask @Inject constructor(private var workerExecutor: WorkerExecutor) : DefaultTask() {
 
     /**
-     * The data files to read in. These files should container binary data representing {@link RuleResult}s
-     * @return all data files to process
+     * Binary rule-result files produced by [CheckRulesTask].
      */
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val dataFiles: ConfigurableFileCollection
 
+    /**
+     * Source files used to resolve violation filenames to paths relative to [projectRoot].
+     * Filenames without a matching source file are retained in the annotations.
+     */
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val sourceFiles: ConfigurableFileCollection
 
+    /**
+     * Base directory used to make annotation source paths relative.
+     *
+     * The runner sets this to the owning build's root project directory, so a child's source at
+     * `app/src/main/java/Example.java` retains that path in both console and JSON annotations.
+     * Custom project directories are resolved relative to the same root, rather than inferred
+     * from the project's logical path.
+     *
+     * During task configuration, [DirectoryProperty.fileValue] converts the immutable
+     * [org.gradle.api.Project.getRootDir] file path to a directory value. This avoids accessing
+     * the root project's mutable layout, which is forbidden by Isolated Projects from a child.
+     * The directory is only a path base; the task searches the files declared by [sourceFiles].
+     */
     @get:Internal
     abstract val projectRoot: DirectoryProperty
 
     /**
-     * the priority threshold for printing failure details
+     * Minimum violation priority included in console and JSON annotations.
      */
     @get:Input
     @get:Optional
     abstract val detailsThreshold: Property<Priority>
 
     /**
-     * File to output github annotations json to
-     * @return file for output
+     * Destination for the JSON report containing the GitHub annotations.
      */
     @get:OutputFile
     abstract val githubReportFile: RegularFileProperty
 
+    /** Runtime classpath for the isolated worker that writes the JSON report. */
     @get:Classpath
     abstract val reportingClasspath: ConfigurableFileCollection
 

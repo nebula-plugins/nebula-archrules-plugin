@@ -21,7 +21,15 @@ import java.util.jar.JarOutputStream
 import java.util.stream.Stream
 import javax.tools.ToolProvider
 
-/** Strict configuration-cache and Isolated Projects regressions for supported workflows. */
+/**
+ * Exercises project plugins with ordinary configuration caching and Isolated Projects on each
+ * supported Gradle version. Fixture builds fail on configuration-cache problems and assert both
+ * initial cache storage and subsequent reuse.
+ *
+ * Fixtures use the plugin-under-test runtime and disable the task output cache. Deleting outputs
+ * therefore verifies regeneration from the restored task graph. Input changes check that rule
+ * results, report paths, library artifacts, and publication metadata retain their behavior.
+ */
 class IsolatedProjectsAssessmentTest {
     @TempDir
     lateinit var projectDir: File
