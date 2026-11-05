@@ -15,6 +15,13 @@ import org.gradle.api.tasks.SourceSet
 import org.gradle.internal.extensions.stdlib.capitalized
 import javax.inject.Inject
 
+/**
+ * Runs architecture rules against Java source sets and registers per-project reports.
+ *
+ * Binary rule results are exposed through the `archRulesReportElements` variant for aggregation.
+ * GitHub reports use the root project directory as their annotation path base, including when
+ * the runner is applied to a child project with a nested or custom project directory.
+ */
 class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Plugin<Project> {
     companion object {
         private const val ARCHRULES_VERSION = "1.+" // keep in sync
@@ -97,7 +104,9 @@ class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Pl
                     dataFiles.from(project.tasks.withType(CheckRulesTask::class.java))
                     githubReportFile.set(archRulesReportDir.map { it.file("github-annotations.json") })
                     sourceFiles.from(javaExt.sourceSets.flatMap { it.allSource })
-                    projectRoot.set(project.rootProject.layout.projectDirectory)
+                    // Capture the immutable root path as a directory value. Reading rootProject.layout
+                    // here would access another project's mutable model when configuring a child task.
+                    projectRoot.fileValue(project.rootDir)
                     detailsThreshold.set(archRulesExt.consoleDetailsThreshold)
                     reportingClasspath.setFrom(archrulesJsonReportingClasspath)
                     onlyIf { archRulesExt.githubReportEnabled.get() || githubRequested }
