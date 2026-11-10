@@ -22,6 +22,7 @@ import org.junit.jupiter.params.provider.ValueSource
 import java.io.File
 import java.util.jar.JarOutputStream
 
+/** Verifies explicit archive-provider wiring for classpaths with transitive self-dependencies. */
 internal class ArchrulesTaskDependenciesTest {
     @TempDir
     lateinit var projectDir: File
@@ -29,7 +30,7 @@ internal class ArchrulesTaskDependenciesTest {
     @ParameterizedTest
     @ValueSource(strings = ["9.2.0", "9.7.1", "9.9.0"])
     fun `a standalone main check builds its self-referenced artifact`(version: String) {
-        val fixture = fixture()
+        val fixture = fixture(wireProducer = true)
 
         val first = fixture.runOn(version, ":consumer:checkArchRulesMain")
 
@@ -50,7 +51,7 @@ internal class ArchrulesTaskDependenciesTest {
     @ParameterizedTest
     @ValueSource(strings = ["9.2.0", "9.7.1", "9.9.0"])
     fun `a custom source set check can run alongside its self-referenced jar`(version: String) {
-        val fixture = fixture(bridgeConfiguration = "integrationTestImplementation")
+        val fixture = fixture(bridgeConfiguration = "integrationTestImplementation", wireProducer = true)
 
         val result = fixture.runOn(version, ":consumer:jar", ":consumer:checkArchRulesIntegrationTest")
 
@@ -61,7 +62,7 @@ internal class ArchrulesTaskDependenciesTest {
     @ParameterizedTest
     @ValueSource(strings = ["9.2.0", "9.7.1", "9.9.0"])
     fun `a standalone custom source set check builds its self-referenced jar`(version: String) {
-        val fixture = fixture(bridgeConfiguration = "integrationTestImplementation")
+        val fixture = fixture(bridgeConfiguration = "integrationTestImplementation", wireProducer = true)
 
         val result = fixture.runOn(version, ":consumer:checkArchRulesIntegrationTest")
 
@@ -72,7 +73,7 @@ internal class ArchrulesTaskDependenciesTest {
     @ParameterizedTest
     @ValueSource(strings = ["9.2.0", "9.7.1", "9.9.0"])
     fun `a self-reference uses the selected replacement artifact producer`(version: String) {
-        val fixture = fixture(replacementArtifact = true)
+        val fixture = fixture(replacementArtifact = true, wireProducer = true)
 
         val result = fixture.runOn(version, ":consumer:replacementJar", ":consumer:checkArchRulesMain")
 
@@ -103,13 +104,21 @@ internal class ArchrulesTaskDependenciesTest {
 
     @ParameterizedTest
     @ValueSource(strings = ["9.2.0", "9.7.1", "9.9.0"])
-    fun `excluding a compile-time self-reference retains rule execution`(version: String) {
-        val fixture = fixture(bridgeConfiguration = "implementation", excludeSelfReference = true)
+    fun `an archive output provider retains lazy resolution for a compile-time self-reference`(version: String) {
+        val fixture = fixture(bridgeConfiguration = "implementation", wireProducer = true)
 
-        val result = fixture.runOn(version, ":consumer:jar", ":consumer:checkArchRulesMain")
+        val first = fixture.runOn(version, ":consumer:checkArchRulesMain")
 
-        assertThat(result.task(":consumer:jar")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
-        assertChecked(result, "main")
+        assertThat(first.task(":consumer:jar")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
+        assertChecked(first, "main")
+        val expectedResults = results("main")
+
+        assertThat(report("main").delete()).isTrue()
+        val reused = fixture.runOn(version, ":consumer:checkArchRulesMain")
+
+        assertThat(reused.output).contains("Reusing configuration cache")
+        assertChecked(reused, "main")
+        assertThat(results("main")).isEqualTo(expectedResults)
     }
 
     @ParameterizedTest
@@ -145,7 +154,7 @@ internal class ArchrulesTaskDependenciesTest {
         selfReference: Boolean = true,
         replacementArtifact: Boolean = false,
         bridgeConfiguration: String = "archRules",
-        excludeSelfReference: Boolean = false
+        wireProducer: Boolean = false
     ): TestProjectRunner {
         val repository = projectDir.resolve("repository")
         val module = repository.resolve("com/example/fixture/bridge/1.0").apply { mkdirs() }
@@ -202,9 +211,7 @@ internal class ArchrulesTaskDependenciesTest {
                     }
                     dependencies {
                         add("archRules", project(":rules"))
-                        add("$bridgeConfiguration", "com.example.fixture:bridge:1.0") {
-                            ${if (excludeSelfReference) "exclude(group = \"com.example.fixture\", module = \"consumer\")" else ""}
-                        }
+                        add("$bridgeConfiguration", "com.example.fixture:bridge:1.0")
                     }
                 """.trimIndent())
                 if (replacementArtifact) {
@@ -218,6 +225,19 @@ internal class ArchrulesTaskDependenciesTest {
                                 outgoing.artifacts.clear()
                                 outgoing.artifact(replacementJar)
                             }
+                        }
+                    """.trimIndent())
+                }
+                if (wireProducer) {
+                    val checkTask = if (bridgeConfiguration == "integrationTestImplementation") {
+                        "checkArchRulesIntegrationTest"
+                    } else {
+                        "checkArchRulesMain"
+                    }
+                    val producer = if (replacementArtifact) "replacementJar" else "jar"
+                    rawBuildScript("""
+                        tasks.named<com.netflix.nebula.archrules.gradle.CheckRulesTask>("$checkTask") {
+                            rulesClasspath.from(tasks.named<Jar>("$producer").flatMap { it.archiveFile })
                         }
                     """.trimIndent())
                 }

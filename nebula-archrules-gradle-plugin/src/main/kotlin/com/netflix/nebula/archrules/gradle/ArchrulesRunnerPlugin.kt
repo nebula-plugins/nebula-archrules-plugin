@@ -186,11 +186,6 @@ class ArchrulesRunnerPlugin @Inject constructor(val objects: ObjectFactory) : Pl
                 }
 
                 shouldResolveConsistentlyWith(configurations.getByName(sourceSet.compileClasspathConfigurationName))
-
-                // Gradle can miss artifact producers reached through external modules
-                // (gradle/gradle#19586). A substitution rule makes task planning resolve
-                // the full graph, retaining those producers without changing selections.
-                resolutionStrategy.dependencySubstitution.all { }
             }
         }
 
