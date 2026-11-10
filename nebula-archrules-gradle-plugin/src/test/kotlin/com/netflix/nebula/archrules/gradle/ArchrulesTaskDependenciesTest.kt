@@ -6,6 +6,7 @@ import nebula.test.dsl.main
 import nebula.test.dsl.plugins
 import nebula.test.dsl.repositories
 import nebula.test.dsl.run
+import nebula.test.dsl.runAndFail
 import nebula.test.dsl.settings
 import nebula.test.dsl.sourceSet
 import nebula.test.dsl.src
@@ -26,7 +27,7 @@ internal class ArchrulesTaskDependenciesTest {
     lateinit var projectDir: File
 
     @ParameterizedTest
-    @ValueSource(strings = ["9.7.1", "9.9.0"])
+    @ValueSource(strings = ["9.2.0", "9.7.1", "9.9.0"])
     fun `a standalone main check builds its self-referenced artifact`(version: String) {
         val fixture = fixture()
 
@@ -47,9 +48,9 @@ internal class ArchrulesTaskDependenciesTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["9.7.1", "9.9.0"])
+    @ValueSource(strings = ["9.2.0", "9.7.1", "9.9.0"])
     fun `a custom source set check can run alongside its self-referenced jar`(version: String) {
-        val fixture = fixture()
+        val fixture = fixture(bridgeConfiguration = "integrationTestImplementation")
 
         val result = fixture.runOn(version, ":consumer:jar", ":consumer:checkArchRulesIntegrationTest")
 
@@ -58,7 +59,18 @@ internal class ArchrulesTaskDependenciesTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["9.7.1", "9.9.0"])
+    @ValueSource(strings = ["9.2.0", "9.7.1", "9.9.0"])
+    fun `a standalone custom source set check builds its self-referenced jar`(version: String) {
+        val fixture = fixture(bridgeConfiguration = "integrationTestImplementation")
+
+        val result = fixture.runOn(version, ":consumer:checkArchRulesIntegrationTest")
+
+        assertThat(result.task(":consumer:jar")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
+        assertChecked(result, "integrationTest")
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["9.2.0", "9.7.1", "9.9.0"])
     fun `a self-reference uses the selected replacement artifact producer`(version: String) {
         val fixture = fixture(replacementArtifact = true)
 
@@ -70,7 +82,7 @@ internal class ArchrulesTaskDependenciesTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["9.7.1", "9.9.0"])
+    @ValueSource(strings = ["9.2.0", "9.7.1", "9.9.0"])
     fun `a check without a self-reference does not build an unrelated jar`(version: String) {
         val fixture = fixture(selfReference = false)
 
@@ -89,7 +101,52 @@ internal class ArchrulesTaskDependenciesTest {
         assertThat(results("main")).isEqualTo(expectedResults)
     }
 
-    private fun fixture(selfReference: Boolean = true, replacementArtifact: Boolean = false): TestProjectRunner {
+    @ParameterizedTest
+    @ValueSource(strings = ["9.2.0", "9.7.1", "9.9.0"])
+    fun `excluding a compile-time self-reference retains rule execution`(version: String) {
+        val fixture = fixture(bridgeConfiguration = "implementation", excludeSelfReference = true)
+
+        val result = fixture.runOn(version, ":consumer:jar", ":consumer:checkArchRulesMain")
+
+        assertThat(result.task(":consumer:jar")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
+        assertChecked(result, "main")
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["9.2.0", "9.7.1", "9.9.0"])
+    fun `rules reject versions that conflict with the compile classpath`(version: String) {
+        val fixture = fixture(selfReference = false)
+        val bridge = projectDir.resolve("repository/com/example/fixture/bridge")
+        val newer = bridge.resolve("2.0").apply { mkdirs() }
+        JarOutputStream(newer.resolve("bridge-2.0.jar").outputStream()).use { }
+        newer.resolve("bridge-2.0.pom").writeText(
+            bridge.resolve("1.0/bridge-1.0.pom").readText()
+                .replace("<version>1.0</version>", "<version>2.0</version>")
+        )
+        projectDir.resolve("consumer/build.gradle.kts").appendText("""
+
+            dependencies {
+                implementation("com.example.fixture:bridge:1.0")
+                add("archRules", "com.example.fixture:bridge:2.0")
+            }
+        """.trimIndent())
+
+        val result = fixture.runAndFail(
+            ":consumer:checkArchRulesMain",
+            "--configuration-cache", "--configuration-cache-problems=fail", "--no-build-cache"
+        ) {
+            withGradle(Gradle.ofVersion(version))
+        }
+
+        assertThat(result.output).contains("bridge:{strictly 1.0}", "by consistent resolution")
+    }
+
+    private fun fixture(
+        selfReference: Boolean = true,
+        replacementArtifact: Boolean = false,
+        bridgeConfiguration: String = "archRules",
+        excludeSelfReference: Boolean = false
+    ): TestProjectRunner {
         val repository = projectDir.resolve("repository")
         val module = repository.resolve("com/example/fixture/bridge/1.0").apply { mkdirs() }
         JarOutputStream(module.resolve("bridge-1.0.jar").outputStream()).use { }
@@ -134,10 +191,6 @@ internal class ArchrulesTaskDependenciesTest {
                 rawBuildScript("""
                     group = "com.example.fixture"
                     version = "1.0"
-                    dependencies {
-                        implementation("com.example.fixture:bridge:1.0")
-                        add("archRules", project(":rules"))
-                    }
                     configurations.configureEach {
                         resolutionStrategy.preferProjectModules()
                     }
@@ -146,6 +199,12 @@ internal class ArchrulesTaskDependenciesTest {
                     }
                     configurations.named("integrationTestImplementation") {
                         extendsFrom(configurations.implementation.get())
+                    }
+                    dependencies {
+                        add("archRules", project(":rules"))
+                        add("$bridgeConfiguration", "com.example.fixture:bridge:1.0") {
+                            ${if (excludeSelfReference) "exclude(group = \"com.example.fixture\", module = \"consumer\")" else ""}
+                        }
                     }
                 """.trimIndent())
                 if (replacementArtifact) {
