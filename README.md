@@ -150,6 +150,37 @@ dependencies {
 }
 ```
 
+#### Workaround for transitive self-dependencies
+
+An external rule or library dependency can depend back on the current project's published coordinate.
+If Gradle selects the local project for that coordinate, it can omit the dependency on the task that produces
+the selected archive ([gradle/gradle#19586](https://github.com/gradle/gradle/issues/19586)). A check can then fail
+validation because it reads the project's JAR without depending on its producer.
+
+For an affected check, add the actual archive output provider to `rulesClasspath`:
+
+```kotlin
+import com.netflix.nebula.archrules.gradle.CheckRulesTask
+import org.gradle.api.tasks.bundling.Jar
+
+tasks.named<CheckRulesTask>("checkArchRulesMain") {
+    rulesClasspath.from(tasks.named<Jar>("jar").flatMap { it.archiveFile })
+}
+```
+
+The equivalent Groovy configuration is:
+
+```groovy
+tasks.named('checkArchRulesMain').configure {
+    rulesClasspath.from(tasks.named('jar', Jar).flatMap { it.archiveFile })
+}
+```
+
+Use the affected source set's check task, such as `checkArchRulesIntegrationTest`, and the task that produces
+the selected archive, such as `replacementJar` if the outgoing artifact has been replaced. The provider
+carries the archive path and its producing task, allowing Gradle to schedule that task before analysis.
+Apply this configuration only to checks whose classpath needs that archive.
+
 #### Overriding rule priority
 
 You can override the default priority of a rule using the `ruleClass` or `ruleName` and `priority` as `LOW`, `MEDIUM`, or `HIGH`:
